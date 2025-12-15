@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -14,6 +15,10 @@ type Config struct {
 	APIVersion      string
 	MigrationsTable string
 	FeatureFlags    map[string]bool
+	ServiceName     string
+	MetricsPath     string
+	OTLPEndpoint    string
+	OTLPHeaders     map[string]string
 }
 
 func Load() (*Config, error) {
@@ -21,6 +26,8 @@ func Load() (*Config, error) {
 	viper.SetDefault("ADDR", ":8080")
 	viper.SetDefault("API_VERSION", "v1")
 	viper.SetDefault("MIGRATIONS_TABLE", "schema_migrations")
+	viper.SetDefault("SERVICE_NAME", "workpulse-api")
+	viper.SetDefault("METRICS_PATH", "/metrics")
 	viper.AutomaticEnv()
 
 	featureFlags := map[string]bool{}
@@ -34,6 +41,17 @@ func Load() (*Config, error) {
 		_ = json.Unmarshal([]byte(raw), &featureFlags)
 	}
 
+	otlpHeaders := map[string]string{}
+	if rawHeaders := viper.GetString("OTEL_EXPORTER_OTLP_HEADERS"); rawHeaders != "" {
+		pairs := strings.Split(rawHeaders, ",")
+		for _, pair := range pairs {
+			items := strings.SplitN(pair, "=", 2)
+			if len(items) == 2 {
+				otlpHeaders[strings.TrimSpace(items[0])] = strings.TrimSpace(items[1])
+			}
+		}
+	}
+
 	cfg := &Config{
 		Env:             viper.GetString("ENV"),
 		Addr:            viper.GetString("ADDR"),
@@ -42,6 +60,10 @@ func Load() (*Config, error) {
 		APIVersion:      viper.GetString("API_VERSION"),
 		MigrationsTable: viper.GetString("MIGRATIONS_TABLE"),
 		FeatureFlags:    featureFlags,
+		ServiceName:     viper.GetString("SERVICE_NAME"),
+		MetricsPath:     viper.GetString("METRICS_PATH"),
+		OTLPEndpoint:    viper.GetString("OTEL_EXPORTER_OTLP_ENDPOINT"),
+		OTLPHeaders:     otlpHeaders,
 	}
 	return cfg, nil
 }
