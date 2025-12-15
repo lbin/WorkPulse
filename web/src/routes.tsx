@@ -15,6 +15,8 @@ import ReportEdit from "./pages/Reports/ReportEdit";
 import Analytics from "./pages/Analytics/Analytics";
 import RequirePermission from "./components/RequirePermission";
 import Unauthorized from "./pages/Unauthorized";
+import Docs from "./pages/Docs/Docs";
+import { FeatureFlagGate } from "./components/FeatureFlagGate";
 
 export const routes = [
   { path: "/", element: <Navigate to="/dashboard" replace /> },
@@ -37,7 +39,26 @@ export const routes = [
       { path: "reports", element: <RequirePermission permission="reports.view"><Reports /></RequirePermission> },
       { path: "reports/:id/edit", element: <RequirePermission permission="reports.manage"><ReportEdit /></RequirePermission> },
 
-      { path: "analytics", element: <RequirePermission permission="analytics.view"><Analytics /></RequirePermission> },
+      {
+        path: "analytics",
+        element: (
+          <RequirePermission permission="analytics.view">
+            <FeatureFlagGate flag="analytics">
+              <Analytics />
+            </FeatureFlagGate>
+          </RequirePermission>
+        ),
+      },
+      {
+        path: "docs",
+        element: (
+          <RequirePermission permission="dashboard.view">
+            <FeatureFlagGate flag="apiDocs">
+              <Docs />
+            </FeatureFlagGate>
+          </RequirePermission>
+        ),
+      },
     ],
   },
   { path: "/unauthorized", element: <Unauthorized /> },

@@ -6,7 +6,8 @@
     "projects": "项目",
     "meetings": "会议",
     "reports": "报告",
-    "analytics": "分析"
+    "analytics": "分析",
+    "docs": "API 文档"
   },
   "common": {
     "language": "语言",
@@ -123,6 +124,13 @@
     "saveFailed": "操作失败",
     "reviewUpdated": "审核已更新",
     "draft": "草稿"
+  },
+  "docs": {
+    "title": "API 文档",
+    "runtime": "文档由当前网关版本与路由自动生成。",
+    "openapi": "OpenAPI 入口",
+    "graphql": "GraphQL SDL 入口",
+    "unavailable": "暂无可用文档地址"
   },
   "projects": {
     "noManagePermission": "关联需要项目编辑权限"

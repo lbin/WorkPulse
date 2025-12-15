@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"workpulse/internal/config"
 	"workpulse/internal/db"
 	"workpulse/internal/handler"
 	"workpulse/internal/middleware"
+	"workpulse/internal/migration"
 	"workpulse/internal/repo"
 	"workpulse/internal/router"
 	"workpulse/internal/service"
@@ -20,6 +22,10 @@ func main() {
 
 	gdb, err := db.Open(cfg.DBDSN)
 	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := migration.Run(gdb, cfg.MigrationsTable); err != nil {
 		log.Fatal(err)
 	}
 
@@ -38,6 +44,9 @@ func main() {
 	authSvc := service.NewAuthService(rbacRepo, auditRepo)
 	authHandler := handler.NewAuthHandler(authSvc)
 
+	configSvc := service.NewConfigService(cfg)
+	configHandler := handler.NewConfigHandler(configSvc, fmt.Sprintf("/api/%s", cfg.APIVersion))
+
 	okrSvc := service.NewOKRService()
 	okrHandler := handler.NewOKRHandler(okrSvc)
 
@@ -48,12 +57,14 @@ func main() {
 
 	r := router.New(router.Deps{
 		JWTSecret:       cfg.JWTSecret,
+		APIVersion:      cfg.APIVersion,
 		WorkItemHandler: wiHandler,
 		ProjectHandler:  projectHandler,
 		OKRHandler:      okrHandler,
 		ReportHandler:   reportHandler,
 		MeetingHandler:  meetingHandler,
 		AuthHandler:     authHandler,
+		ConfigHandler:   configHandler,
 		PermissionMW:    permMW,
 	})
 

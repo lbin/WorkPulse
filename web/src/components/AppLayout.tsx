@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
 import { useAuth, useOrgUnits } from "./AuthProvider";
+import { useConfig } from "./ConfigProvider";
 
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
@@ -13,6 +14,7 @@ export default function AppLayout() {
   const key = loc.pathname.startsWith("/okr") ? "/okr" : loc.pathname;
   const { t } = useTranslation();
   const { profile, setActiveOrgUnit, activeOrgUnit, hasPermission } = useAuth();
+  const { isFeatureEnabled } = useConfig();
   const units = useOrgUnits();
 
   const items = useMemo(
@@ -23,9 +25,10 @@ export default function AppLayout() {
         { key: "/projects", label: <Link to="/projects">{t("nav.projects")}</Link>, permission: "projects.view" },
         { key: "/meetings", label: <Link to="/meetings">{t("nav.meetings")}</Link>, permission: "meetings.view" },
         { key: "/reports", label: <Link to="/reports">{t("nav.reports")}</Link>, permission: "reports.view" },
-        { key: "/analytics", label: <Link to="/analytics">{t("nav.analytics")}</Link>, permission: "analytics.view" },
-      ].filter((item) => hasPermission(item.permission)),
-    [hasPermission, t]
+        { key: "/analytics", label: <Link to="/analytics">{t("nav.analytics")}</Link>, permission: "analytics.view", flag: "analytics" },
+        { key: "/docs", label: <Link to="/docs">{t("nav.docs")}</Link>, permission: "dashboard.view", flag: "apiDocs" },
+      ].filter((item) => hasPermission(item.permission) && (!item.flag || isFeatureEnabled(item.flag, true))),
+    [hasPermission, isFeatureEnabled, t]
   );
 
   const langValue = i18n.language?.startsWith("en") ? "en" : "zh";

@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRoutes } from "react-router-dom";
-import { ConfigProvider } from "antd";
+import { ConfigProvider as AntdConfigProvider } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
 
 import { routes } from "./routes";
 import i18n from "./i18n";
 import { AuthProvider } from "./components/AuthProvider";
+import { ClientConfigProvider } from "./components/ConfigProvider";
 
 export default function App() {
   const element = useRoutes(routes);
@@ -21,10 +22,12 @@ export default function App() {
   const antdLocale = useMemo(() => (lang === "en" ? enUS : zhCN), [lang]);
 
   return (
-    <AuthProvider>
-      <ConfigProvider locale={antdLocale}>
-        {element}
-      </ConfigProvider>
-    </AuthProvider>
+    <ClientConfigProvider>
+      <AuthProvider>
+        <AntdConfigProvider locale={antdLocale}>
+          {element}
+        </AntdConfigProvider>
+      </AuthProvider>
+    </ClientConfigProvider>
   );
 }
