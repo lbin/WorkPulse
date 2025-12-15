@@ -11,14 +11,17 @@ import {
   convertMeetingAction,
   getMeeting,
   updateMeeting,
+  type Meeting,
+  type MeetingAction,
+  type MeetingLink,
 } from "../../api/meetings";
 
 export default function MeetingDetail() {
   const { t } = useTranslation();
   const { id } = useParams();
-  const [meeting, setMeeting] = useState<any>();
-  const [actions, setActions] = useState<any[]>([]);
-  const [links, setLinks] = useState<any[]>([]);
+  const [meeting, setMeeting] = useState<Meeting>();
+  const [actions, setActions] = useState<MeetingAction[]>([]);
+  const [links, setLinks] = useState<MeetingLink[]>([]);
   const [loading, setLoading] = useState(false);
   const [notesForm] = Form.useForm();
   const [actionForm] = Form.useForm();
@@ -84,7 +87,7 @@ export default function MeetingDetail() {
     fetchData();
   };
 
-  const columns: ColumnsType<any> = [
+  const columns: ColumnsType<MeetingAction> = [
     { title: t("meetings.action_title"), dataIndex: "title" },
     {
       title: t("meetings.owner"),
