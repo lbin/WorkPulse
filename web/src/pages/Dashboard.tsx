@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Card, Row, Col, Button, Typography } from "antd";
+import { useTranslation } from "react-i18next";
 import WorkItemTable from "../components/WorkItemTable";
 import LinkOKRModal from "../components/LinkOKRModal";
 import { createWorkItem, addOKRLink, WorkItem } from "../api/workItems";
@@ -11,6 +12,7 @@ const { Text } = Typography;
 const DUMMY_USER_ID = "00000000-0000-0000-0000-000000000000";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<WorkItem[]>([]);
   const [linkOpen, setLinkOpen] = useState(false);
   const [current, setCurrent] = useState<WorkItem | null>(null);
@@ -19,25 +21,25 @@ export default function Dashboard() {
     <Row gutter={16}>
       <Col span={14}>
         <Card
-          title="今日产出 / 待办"
+          title={t("dashboard.title")}
           extra={
             <Button
               onClick={async () => {
                 const wi = await createWorkItem({
                   owner_user_id: DUMMY_USER_ID,
                   type: "TASK",
-                  title: "新任务",
+                  title: t("dashboard.newWorkItem"),
                   priority: 3
                 });
                 setItems([wi, ...items]);
               }}
             >
-              新建工作项
+              {t("dashboard.newWorkItem")}
             </Button>
           }
         >
           {items.length === 0 ? (
-            <Text type="secondary">暂无数据。点击右上角“新建工作项”做一次联调。</Text>
+            <Text type="secondary">{t("dashboard.empty")}</Text>
           ) : (
             <WorkItemTable
               data={items}
@@ -51,8 +53,8 @@ export default function Dashboard() {
       </Col>
 
       <Col span={10}>
-        <Card title="OKR 贡献提示（占位）">
-          这里接入 analytics 接口后展示：覆盖率、投入偏差、无归属工作 Top。
+        <Card title={t("dashboard.okrHintTitle")}>
+          {t("dashboard.okrHintBody")}
         </Card>
       </Col>
 

@@ -1,0 +1,88 @@
+# ======================
+# OS / Editor
+# ======================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ======================
+# Logs
+# ======================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ======================
+# Go
+# ======================
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Build / coverage
+/bin/
+dist/
+coverage/
+*.coverprofile
+
+# Go workspace / tooling
+/vendor/
+go.work
+go.work.sum
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# ======================
+# Frontend (React / Vite)
+# ======================
+web/node_modules/
+web/dist/
+web/.vite/
+web/.cache/
+web/.turbo/
+web/.parcel-cache/
+web/.eslintcache
+
+# TypeScript build info
+web/tsconfig.tsbuildinfo
+
+# ======================
+# Database / local data
+# ======================
+*.sqlite
+*.sqlite3
+*.db
+data/
+tmp/
+.cache/
+
+# ======================
+# Docker / compose overrides (optional)
+# ======================
+docker-compose.override.yml
+
+# ======================
+# Archives / artifacts
+# ======================
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar

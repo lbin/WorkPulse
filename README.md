@@ -30,3 +30,7 @@ Vite proxies `/api` to `http://localhost:8080`.
 ## Notes
 - Auth in this scaffold expects a JWT with `user_id` and `org_id` claims.
 - Many endpoints are stubs; the goal is to provide a clean, evolvable skeleton.
+
+## Internationalization (i18n)
+- UI supports Chinese (zh) and English (en).
+- Language is persisted in localStorage key `workpulse_lang`.

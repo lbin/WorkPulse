@@ -1,0 +1,39 @@
+{
+  "app": {
+    "name": "WorkPulse"
+  },
+  "nav": {
+    "dashboard": "今日",
+    "okr": "OKR",
+    "projects": "项目",
+    "meetings": "纪要",
+    "reports": "报告",
+    "analytics": "分析"
+  },
+  "common": {
+    "language": "语言",
+    "chinese": "中文",
+    "english": "English",
+    "todo": "TODO"
+  },
+  "dashboard": {
+    "title": "今日产出 / 待办",
+    "newWorkItem": "新建工作项",
+    "empty": "暂无数据。点击右上角“新建工作项”做一次联调。",
+    "okrHintTitle": "OKR 贡献提示（占位）",
+    "okrHintBody": "这里接入 analytics 接口后展示：覆盖率、投入偏差、无归属工作 Top。"
+  },
+  "okrLink": {
+    "title": "关联 OKR",
+    "kr": "Key Result",
+    "objective": "Objective",
+    "linkType": "关联类型",
+    "planned": "计划",
+    "actual": "实际",
+    "both": "计划+实际",
+    "weight": "贡献权重",
+    "evidenceRequired": "需要证据",
+    "selectKR": "选择 KR（接入后端列表）",
+    "selectObj": "选择 Objective（可选）"
+  }
+}

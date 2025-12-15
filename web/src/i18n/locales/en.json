@@ -1,0 +1,39 @@
+{
+  "app": {
+    "name": "WorkPulse"
+  },
+  "nav": {
+    "dashboard": "Today",
+    "okr": "OKR",
+    "projects": "Projects",
+    "meetings": "Meetings",
+    "reports": "Reports",
+    "analytics": "Analytics"
+  },
+  "common": {
+    "language": "Language",
+    "chinese": "中文",
+    "english": "English",
+    "todo": "TODO"
+  },
+  "dashboard": {
+    "title": "Today / Work Items",
+    "newWorkItem": "New Work Item",
+    "empty": "No data yet. Click “New Work Item” to smoke test the API.",
+    "okrHintTitle": "OKR Contribution (Placeholder)",
+    "okrHintBody": "Wire analytics APIs here: coverage, effort delta, and unlinked work items."
+  },
+  "okrLink": {
+    "title": "Link OKR",
+    "kr": "Key Result",
+    "objective": "Objective",
+    "linkType": "Link Type",
+    "planned": "Planned",
+    "actual": "Actual",
+    "both": "Planned + Actual",
+    "weight": "Contribution Weight",
+    "evidenceRequired": "Evidence Required",
+    "selectKR": "Select a KR (from backend)",
+    "selectObj": "Select an Objective (optional)"
+  }
+}
