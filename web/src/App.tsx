@@ -6,6 +6,7 @@ import zhCN from "antd/locale/zh_CN";
 
 import { routes } from "./routes";
 import i18n from "./i18n";
+import { AuthProvider } from "./components/AuthProvider";
 
 export default function App() {
   const element = useRoutes(routes);
@@ -20,8 +21,10 @@ export default function App() {
   const antdLocale = useMemo(() => (lang === "en" ? enUS : zhCN), [lang]);
 
   return (
-    <ConfigProvider locale={antdLocale}>
-      {element}
-    </ConfigProvider>
+    <AuthProvider>
+      <ConfigProvider locale={antdLocale}>
+        {element}
+      </ConfigProvider>
+    </AuthProvider>
   );
 }

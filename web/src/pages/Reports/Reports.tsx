@@ -18,6 +18,7 @@ import { Link, useNavigate } from "react-router-dom";
 import dayjs, { Dayjs } from "dayjs";
 import { useTranslation } from "react-i18next";
 import { Report, ReportLink, exportReports, getReport, listReports } from "../../api/reports";
+import { usePermission } from "../../components/AuthProvider";
 
 const statusColor: Record<string, string> = {
   draft: "default",
@@ -36,6 +37,7 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedLinks, setSelectedLinks] = useState<ReportLink[]>([]);
+  const canManage = usePermission("reports.manage");
 
   useEffect(() => {
     load();
@@ -63,7 +65,7 @@ export default function Page() {
         title: t("common.actions", { defaultValue: "Actions" }),
         render: (_: unknown, record: Report) => (
           <Space>
-            <Link to={`/reports/${record.id}/edit`}>{t("reports.edit")}</Link>
+            {canManage && <Link to={`/reports/${record.id}/edit`}>{t("reports.edit")}</Link>}
             <Button type="link" onClick={() => openDetail(record.id)}>
               {t("reports.viewDetail")}
             </Button>
@@ -71,7 +73,7 @@ export default function Page() {
         ),
       },
     ],
-    [t]
+    [t, canManage]
   );
 
   return (
@@ -112,9 +114,11 @@ export default function Page() {
           <Form.Item style={{ marginLeft: "auto" }}>
             <Space>
               <Button onClick={handleExport}>{t("reports.export")}</Button>
-              <Button type="primary" onClick={() => navigate("/reports/new/edit")}> 
-                {t("reports.new")}
-              </Button>
+              {canManage && (
+                <Button type="primary" onClick={() => navigate("/reports/new/edit")}>
+                  {t("reports.new")}
+                </Button>
+              )}
             </Space>
           </Form.Item>
         </Form>

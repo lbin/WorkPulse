@@ -1,24 +1,32 @@
-import React from "react";
-import { Layout, Menu, Select } from "antd";
+import React, { useMemo } from "react";
+import { Layout, Menu, Select, Space, Typography } from "antd";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
+import { useAuth, useOrgUnits } from "./AuthProvider";
 
 const { Sider, Header, Content } = Layout;
+const { Text } = Typography;
 
 export default function AppLayout() {
   const loc = useLocation();
   const key = loc.pathname.startsWith("/okr") ? "/okr" : loc.pathname;
   const { t } = useTranslation();
+  const { profile, setActiveOrgUnit, activeOrgUnit, hasPermission } = useAuth();
+  const units = useOrgUnits();
 
-  const items = [
-    { key: "/dashboard", label: <Link to="/dashboard">{t("nav.dashboard")}</Link> },
-    { key: "/okr", label: <Link to="/okr">{t("nav.okr")}</Link> },
-    { key: "/projects", label: <Link to="/projects">{t("nav.projects")}</Link> },
-    { key: "/meetings", label: <Link to="/meetings">{t("nav.meetings")}</Link> },
-    { key: "/reports", label: <Link to="/reports">{t("nav.reports")}</Link> },
-    { key: "/analytics", label: <Link to="/analytics">{t("nav.analytics")}</Link> },
-  ];
+  const items = useMemo(
+    () =>
+      [
+        { key: "/dashboard", label: <Link to="/dashboard">{t("nav.dashboard")}</Link>, permission: "dashboard.view" },
+        { key: "/okr", label: <Link to="/okr">{t("nav.okr")}</Link>, permission: "okr.view" },
+        { key: "/projects", label: <Link to="/projects">{t("nav.projects")}</Link>, permission: "projects.view" },
+        { key: "/meetings", label: <Link to="/meetings">{t("nav.meetings")}</Link>, permission: "meetings.view" },
+        { key: "/reports", label: <Link to="/reports">{t("nav.reports")}</Link>, permission: "reports.view" },
+        { key: "/analytics", label: <Link to="/analytics">{t("nav.analytics")}</Link>, permission: "analytics.view" },
+      ].filter((item) => hasPermission(item.permission)),
+    [hasPermission, t]
+  );
 
   const langValue = i18n.language?.startsWith("en") ? "en" : "zh";
 
@@ -29,7 +37,22 @@ export default function AppLayout() {
         <Menu theme="dark" mode="inline" selectedKeys={[key]} items={items} />
       </Sider>
       <Layout>
-        <Header style={{ background: "#fff", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
+        <Header style={{ background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, paddingInline: 16 }}>
+          <Space>
+            <div>
+              <Text type="secondary" style={{ marginRight: 8 }}>
+                {t("common.teamSwitch", "Team/Org unit")}
+              </Text>
+              <Select
+                value={activeOrgUnit}
+                placeholder={t("common.selectTeam", "Select team")}
+                style={{ minWidth: 220 }}
+                options={units.map((u) => ({ value: u.id, label: u.name }))}
+                onChange={(v) => setActiveOrgUnit(v)}
+              />
+            </div>
+            {profile?.user && <Text>{profile.user.display_name}</Text>}
+          </Space>
           <Select
             value={langValue}
             style={{ width: 140 }}

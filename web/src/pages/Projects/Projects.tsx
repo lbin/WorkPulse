@@ -20,6 +20,7 @@ import {
   Typography,
 } from "antd";
 import { useTranslation } from "react-i18next";
+import { usePermission } from "../../components/AuthProvider";
 import {
   Project,
   Task,
@@ -58,6 +59,7 @@ export default function ProjectsPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskLinks, setTaskLinks] = useState<TaskLink[]>([]);
   const [linkForm] = Form.useForm();
+  const canManage = usePermission("projects.manage");
 
   useEffect(() => {
     fetchProjects()
@@ -122,6 +124,7 @@ export default function ProjectsPage() {
 
   const handleLinkSubmit = async () => {
     if (!selectedTask) return;
+    if (!canManage) return;
     const values = await linkForm.validateFields();
     const link = await linkTask(selectedTask.id, values.entity_type, values.entity_id);
     setTaskLinks((prev) => [link, ...prev]);
@@ -130,6 +133,7 @@ export default function ProjectsPage() {
 
   const handleUnlink = async (linkId: string) => {
     if (!selectedTask) return;
+    if (!canManage) return;
     await unlinkTask(selectedTask.id, linkId);
     setTaskLinks((prev) => prev.filter((l) => l.id !== linkId));
   };
@@ -284,30 +288,36 @@ export default function ProjectsPage() {
                   <Space style={{ width: "100%" }}>
                     <Text>{l.entity_type}</Text>
                     <Text code>{l.entity_id}</Text>
-                    <Button size="small" type="link" danger onClick={() => handleUnlink(l.id)}>
-                      {t("common.remove", "Remove")}
-                    </Button>
+                    {canManage && (
+                      <Button size="small" type="link" danger onClick={() => handleUnlink(l.id)}>
+                        {t("common.remove", "Remove")}
+                      </Button>
+                    )}
                   </Space>
                 </Card>
               ))}
             </Space>
-            <Form layout="vertical" form={linkForm} onFinish={handleLinkSubmit}>
-              <Form.Item name="entity_type" label={t("projects.linkType", "Link type")} rules={[{ required: true }]}>
-                <Select
-                  options={[
-                    { label: "OKR KR", value: "okr_kr" },
-                    { label: "OKR Objective", value: "okr_objective" },
-                    { label: "Report", value: "report" },
-                  ]}
-                />
-              </Form.Item>
-              <Form.Item name="entity_id" label={t("projects.linkId", "Linked ID")} rules={[{ required: true }]}>
-                <Input placeholder="UUID" />
-              </Form.Item>
-              <Button type="primary" htmlType="submit" block>
-                {t("projects.addLink", "Add link")}
-              </Button>
-            </Form>
+            {canManage ? (
+              <Form layout="vertical" form={linkForm} onFinish={handleLinkSubmit}>
+                <Form.Item name="entity_type" label={t("projects.linkType", "Link type")} rules={[{ required: true }]}>
+                  <Select
+                    options={[
+                      { label: "OKR KR", value: "okr_kr" },
+                      { label: "OKR Objective", value: "okr_objective" },
+                      { label: "Report", value: "report" },
+                    ]}
+                  />
+                </Form.Item>
+                <Form.Item name="entity_id" label={t("projects.linkId", "Linked ID")} rules={[{ required: true }]}>
+                  <Input placeholder="UUID" />
+                </Form.Item>
+                <Button type="primary" htmlType="submit" block>
+                  {t("projects.addLink", "Add link")}
+                </Button>
+              </Form>
+            ) : (
+              <Text type="secondary">{t("projects.noManagePermission", "Linking requires project edit permission.")}</Text>
+            )}
           </Space>
         ) : (
           <Empty />

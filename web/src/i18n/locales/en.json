@@ -17,7 +17,12 @@
     "required": "Required",
     "save": "Save",
     "saved": "Saved",
-    "not_set": "Not set"
+    "not_set": "Not set",
+    "unauthorizedTitle": "No access",
+    "unauthorizedDesc": "You do not have permission to view this page.",
+    "backHome": "Back to dashboard",
+    "teamSwitch": "Team/Org unit",
+    "selectTeam": "Select team"
   },
   "dashboard": {
     "title": "Today / Work Items",
@@ -118,5 +123,8 @@
     "saveFailed": "Action failed",
     "reviewUpdated": "Review updated",
     "draft": "Draft"
+  },
+  "projects": {
+    "noManagePermission": "Linking requires project edit permission."
   }
 }
