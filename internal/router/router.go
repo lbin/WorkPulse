@@ -54,6 +54,8 @@ func New(d Deps) *gin.Engine {
 	api.POST("/okrs/links", d.OKRHandler.AddLink)
 	api.DELETE("/okrs/links/:id", d.OKRHandler.RemoveLink)
 
+	api.GET("/okrs/metrics", d.OKRHandler.Metrics)
+
 	api.GET("/reports", d.ReportHandler.List)
 	api.GET("/reports/export", d.ReportHandler.Export)
 	api.GET("/reports/:id", d.ReportHandler.Get)
