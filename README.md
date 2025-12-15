@@ -41,6 +41,10 @@ Vite proxies `/api` to `http://localhost:8080`.
 - Auth in this scaffold expects a JWT with `user_id` and `org_id` claims.
 - Many endpoints are stubs; the goal is to provide a clean, evolvable skeleton.
 
+## Operations
+- CI/CD workflows live in `.github/workflows` (see `ci.yml` and `cd.yml`).
+- Observability, backup, and deployment runbooks are captured in `docs/ops.md`.
+
 ## Internationalization (i18n)
 - UI supports Chinese (zh) and English (en).
 - Language is persisted in localStorage key `workpulse_lang`.

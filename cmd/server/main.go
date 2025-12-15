@@ -1,24 +1,46 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"workpulse/internal/config"
 	"workpulse/internal/db"
 	"workpulse/internal/handler"
 	"workpulse/internal/middleware"
 	"workpulse/internal/migration"
+	"workpulse/internal/observability"
 	"workpulse/internal/repo"
 	"workpulse/internal/router"
 	"workpulse/internal/service"
 )
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	obs, err := observability.New(ctx, observability.Config{
+		ServiceName:  cfg.ServiceName,
+		Environment:  cfg.Env,
+		OTLPEndpoint: cfg.OTLPEndpoint,
+		OTLPHeaders:  cfg.OTLPHeaders,
+		MetricsPath:  cfg.MetricsPath,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		_ = obs.Shutdown(context.Background())
+	}()
 
 	gdb, err := db.Open(cfg.DBDSN)
 	if err != nil {
@@ -56,8 +78,12 @@ func main() {
 	permMW := middleware.NewPermissionsLoader(authSvc)
 
 	r := router.New(router.Deps{
+		ServiceName:     cfg.ServiceName,
 		JWTSecret:       cfg.JWTSecret,
 		APIVersion:      cfg.APIVersion,
+		MetricsPath:     cfg.MetricsPath,
+		MetricsHandler:  obs.MetricsHandler,
+		TelemetryMW:     obs.GinMiddleware(),
 		WorkItemHandler: wiHandler,
 		ProjectHandler:  projectHandler,
 		OKRHandler:      okrHandler,

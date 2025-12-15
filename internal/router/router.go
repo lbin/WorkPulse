@@ -11,8 +11,12 @@ import (
 )
 
 type Deps struct {
+	ServiceName     string
 	JWTSecret       string
 	APIVersion      string
+	MetricsPath     string
+	MetricsHandler  http.Handler
+	TelemetryMW     gin.HandlerFunc
 	WorkItemHandler *handler.WorkItemHandler
 	ProjectHandler  *handler.ProjectHandler
 	OKRHandler      *handler.OKRHandler
@@ -25,6 +29,17 @@ type Deps struct {
 
 func New(d Deps) *gin.Engine {
 	r := gin.Default()
+	if d.TelemetryMW != nil {
+		r.Use(d.TelemetryMW)
+	}
+
+	if d.MetricsHandler != nil {
+		path := d.MetricsPath
+		if path == "" {
+			path = "/metrics"
+		}
+		r.GET(path, gin.WrapH(d.MetricsHandler))
+	}
 	r.GET("/healthz", handler.Health)
 
 	versionedBase := fmt.Sprintf("/api/%s", d.APIVersion)
