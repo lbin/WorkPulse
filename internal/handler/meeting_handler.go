@@ -1,13 +1,11 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/datatypes"
 
 	"workpulse/internal/models"
 	"workpulse/internal/service"
@@ -292,20 +290,4 @@ func (h *MeetingHandler) AddLink(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": link})
-}
-
-// helpers reuse workitem handler parse logic
-type jsonable interface{}
-
-func mustJSON(v jsonable) datatypes.JSON {
-	b, _ := json.Marshal(v)
-	return datatypes.JSON(b)
-}
-
-func parseUUID(id *string) *uuid.UUID {
-	if id == nil || *id == "" {
-		return nil
-	}
-	u := uuid.MustParse(*id)
-	return &u
 }

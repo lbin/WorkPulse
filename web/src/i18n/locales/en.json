@@ -6,7 +6,8 @@
     "projects": "Projects",
     "meetings": "Meetings",
     "reports": "Reports",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "docs": "API Docs"
   },
   "common": {
     "language": "Language",
@@ -123,6 +124,13 @@
     "saveFailed": "Action failed",
     "reviewUpdated": "Review updated",
     "draft": "Draft"
+  },
+  "docs": {
+    "title": "API Documentation",
+    "runtime": "Docs are generated from the live gateway version.",
+    "openapi": "OpenAPI endpoint",
+    "graphql": "GraphQL SDL endpoint",
+    "unavailable": "Docs URL unavailable"
   },
   "projects": {
     "noManagePermission": "Linking requires project edit permission."

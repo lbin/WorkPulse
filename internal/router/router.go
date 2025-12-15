@@ -1,19 +1,25 @@
 package router
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+
 	"workpulse/internal/handler"
 	"workpulse/internal/middleware"
 )
 
 type Deps struct {
 	JWTSecret       string
+	APIVersion      string
 	WorkItemHandler *handler.WorkItemHandler
 	ProjectHandler  *handler.ProjectHandler
 	OKRHandler      *handler.OKRHandler
 	ReportHandler   *handler.ReportHandler
 	MeetingHandler  *handler.MeetingHandler
 	AuthHandler     *handler.AuthHandler
+	ConfigHandler   *handler.ConfigHandler
 	PermissionMW    *middleware.PermissionsLoader
 }
 
@@ -21,62 +27,72 @@ func New(d Deps) *gin.Engine {
 	r := gin.Default()
 	r.GET("/healthz", handler.Health)
 
-	api := r.Group("/api/v1")
+	versionedBase := fmt.Sprintf("/api/%s", d.APIVersion)
+
+	api := r.Group(versionedBase)
 	api.Use(middleware.Auth(d.JWTSecret), middleware.OrgContext(), d.PermissionMW.Handler())
 
-	api.GET("/auth/me", d.AuthHandler.Me)
+	specs := []RouteSpec{
+		{Method: http.MethodGet, Path: "/auth/me", Handler: d.AuthHandler.Me, Summary: "Current authenticated user", Tag: "auth"},
 
-	api.POST("/work-items", middleware.RequirePermission("workitems.manage"), d.WorkItemHandler.Create)
-	api.POST("/work-items/:id/okr-links", middleware.RequirePermission("workitems.manage"), d.WorkItemHandler.AddOKRLink)
+		{Method: http.MethodPost, Path: "/work-items", Permission: "workitems.manage", Handler: d.WorkItemHandler.Create, Summary: "Create work item", Tag: "work_items"},
+		{Method: http.MethodPost, Path: "/work-items/:id/okr-links", Permission: "workitems.manage", Handler: d.WorkItemHandler.AddOKRLink, Summary: "Link work item to OKR", Tag: "work_items"},
 
-	api.GET("/projects", middleware.RequirePermission("projects.view"), d.ProjectHandler.List)
-	api.POST("/projects", middleware.RequirePermission("projects.manage"), d.ProjectHandler.Create)
-	api.PUT("/projects/:id", middleware.RequirePermission("projects.manage"), d.ProjectHandler.Update)
-	api.GET("/projects/:id/milestones", middleware.RequirePermission("projects.view"), d.ProjectHandler.ListMilestones)
-	api.POST("/projects/:id/milestones", middleware.RequirePermission("projects.manage"), d.ProjectHandler.CreateMilestone)
-	api.PUT("/milestones/:id", middleware.RequirePermission("projects.manage"), d.ProjectHandler.UpdateMilestone)
-	api.GET("/projects/:id/tasks", middleware.RequirePermission("projects.view"), d.ProjectHandler.ListTasks)
-	api.POST("/projects/:id/tasks", middleware.RequirePermission("projects.manage"), d.ProjectHandler.CreateTask)
-	api.PUT("/tasks/:id", middleware.RequirePermission("projects.manage"), d.ProjectHandler.UpdateTask)
-	api.POST("/projects/:id/links", middleware.RequirePermission("projects.manage"), d.ProjectHandler.AddProjectLink)
-	api.DELETE("/projects/:projectId/links/:linkId", middleware.RequirePermission("projects.manage"), d.ProjectHandler.RemoveProjectLink)
-	api.POST("/tasks/:id/links", middleware.RequirePermission("projects.manage"), d.ProjectHandler.AddTaskLink)
-	api.DELETE("/tasks/:taskId/links/:linkId", middleware.RequirePermission("projects.manage"), d.ProjectHandler.RemoveTaskLink)
-	api.GET("/tasks/:id/links", middleware.RequirePermission("projects.view"), d.ProjectHandler.ListTaskLinks)
-	api.GET("/projects/:id/okr-progress", middleware.RequirePermission("projects.view"), d.ProjectHandler.OKRProgress)
+		{Method: http.MethodGet, Path: "/projects", Permission: "projects.view", Handler: d.ProjectHandler.List, Summary: "List projects", Tag: "projects"},
+		{Method: http.MethodPost, Path: "/projects", Permission: "projects.manage", Handler: d.ProjectHandler.Create, Summary: "Create project", Tag: "projects"},
+		{Method: http.MethodPut, Path: "/projects/:id", Permission: "projects.manage", Handler: d.ProjectHandler.Update, Summary: "Update project", Tag: "projects"},
+		{Method: http.MethodGet, Path: "/projects/:id/milestones", Permission: "projects.view", Handler: d.ProjectHandler.ListMilestones, Summary: "List milestones", Tag: "projects"},
+		{Method: http.MethodPost, Path: "/projects/:id/milestones", Permission: "projects.manage", Handler: d.ProjectHandler.CreateMilestone, Summary: "Create milestone", Tag: "projects"},
+		{Method: http.MethodPut, Path: "/milestones/:id", Permission: "projects.manage", Handler: d.ProjectHandler.UpdateMilestone, Summary: "Update milestone", Tag: "projects"},
+		{Method: http.MethodGet, Path: "/projects/:id/tasks", Permission: "projects.view", Handler: d.ProjectHandler.ListTasks, Summary: "List project tasks", Tag: "projects"},
+		{Method: http.MethodPost, Path: "/projects/:id/tasks", Permission: "projects.manage", Handler: d.ProjectHandler.CreateTask, Summary: "Create task", Tag: "projects"},
+		{Method: http.MethodPut, Path: "/tasks/:id", Permission: "projects.manage", Handler: d.ProjectHandler.UpdateTask, Summary: "Update task", Tag: "projects"},
+		{Method: http.MethodPost, Path: "/projects/:id/links", Permission: "projects.manage", Handler: d.ProjectHandler.AddProjectLink, Summary: "Add project link", Tag: "projects"},
+		{Method: http.MethodDelete, Path: "/projects/:projectId/links/:linkId", Permission: "projects.manage", Handler: d.ProjectHandler.RemoveProjectLink, Summary: "Remove project link", Tag: "projects"},
+		{Method: http.MethodPost, Path: "/tasks/:id/links", Permission: "projects.manage", Handler: d.ProjectHandler.AddTaskLink, Summary: "Add task link", Tag: "projects"},
+		{Method: http.MethodDelete, Path: "/tasks/:taskId/links/:linkId", Permission: "projects.manage", Handler: d.ProjectHandler.RemoveTaskLink, Summary: "Remove task link", Tag: "projects"},
+		{Method: http.MethodGet, Path: "/tasks/:id/links", Permission: "projects.view", Handler: d.ProjectHandler.ListTaskLinks, Summary: "List task links", Tag: "projects"},
+		{Method: http.MethodGet, Path: "/projects/:id/okr-progress", Permission: "projects.view", Handler: d.ProjectHandler.OKRProgress, Summary: "Project OKR progress", Tag: "projects"},
 
-	api.GET("/okrs/objectives", middleware.RequirePermission("okr.view"), d.OKRHandler.ListObjectives)
-	api.POST("/okrs/objectives", middleware.RequirePermission("okr.manage"), d.OKRHandler.CreateObjective)
-	api.PUT("/okrs/objectives/:id", middleware.RequirePermission("okr.manage"), d.OKRHandler.UpdateObjective)
-	api.POST("/okrs/objectives/:id/archive", middleware.RequirePermission("okr.manage"), d.OKRHandler.ArchiveObjective)
+		{Method: http.MethodGet, Path: "/okrs/objectives", Permission: "okr.view", Handler: d.OKRHandler.ListObjectives, Summary: "List objectives", Tag: "okr"},
+		{Method: http.MethodPost, Path: "/okrs/objectives", Permission: "okr.manage", Handler: d.OKRHandler.CreateObjective, Summary: "Create objective", Tag: "okr"},
+		{Method: http.MethodPut, Path: "/okrs/objectives/:id", Permission: "okr.manage", Handler: d.OKRHandler.UpdateObjective, Summary: "Update objective", Tag: "okr"},
+		{Method: http.MethodPost, Path: "/okrs/objectives/:id/archive", Permission: "okr.manage", Handler: d.OKRHandler.ArchiveObjective, Summary: "Archive objective", Tag: "okr"},
+		{Method: http.MethodPost, Path: "/okrs/key-results", Permission: "okr.manage", Handler: d.OKRHandler.CreateKeyResult, Summary: "Create key result", Tag: "okr"},
+		{Method: http.MethodPut, Path: "/okrs/key-results/:id", Permission: "okr.manage", Handler: d.OKRHandler.UpdateKeyResult, Summary: "Update key result", Tag: "okr"},
+		{Method: http.MethodPost, Path: "/okrs/key-results/:id/archive", Permission: "okr.manage", Handler: d.OKRHandler.ArchiveKeyResult, Summary: "Archive key result", Tag: "okr"},
+		{Method: http.MethodPost, Path: "/okrs/key-results/:id/progress", Permission: "okr.manage", Handler: d.OKRHandler.UpdateProgress, Summary: "Update key result progress", Tag: "okr"},
+		{Method: http.MethodPost, Path: "/okrs/links", Permission: "okr.manage", Handler: d.OKRHandler.AddLink, Summary: "Create OKR link", Tag: "okr"},
+		{Method: http.MethodDelete, Path: "/okrs/links/:id", Permission: "okr.manage", Handler: d.OKRHandler.RemoveLink, Summary: "Delete OKR link", Tag: "okr"},
+		{Method: http.MethodGet, Path: "/okrs/metrics", Permission: "okr.view", Handler: d.OKRHandler.Metrics, Summary: "OKR metrics", Tag: "okr"},
 
-	api.POST("/okrs/key-results", middleware.RequirePermission("okr.manage"), d.OKRHandler.CreateKeyResult)
-	api.PUT("/okrs/key-results/:id", middleware.RequirePermission("okr.manage"), d.OKRHandler.UpdateKeyResult)
-	api.POST("/okrs/key-results/:id/archive", middleware.RequirePermission("okr.manage"), d.OKRHandler.ArchiveKeyResult)
-	api.POST("/okrs/key-results/:id/progress", middleware.RequirePermission("okr.manage"), d.OKRHandler.UpdateProgress)
+		{Method: http.MethodGet, Path: "/reports", Permission: "reports.view", Handler: d.ReportHandler.List, Summary: "List reports", Tag: "reports"},
+		{Method: http.MethodGet, Path: "/reports/export", Permission: "reports.view", Handler: d.ReportHandler.Export, Summary: "Export reports", Tag: "reports"},
+		{Method: http.MethodGet, Path: "/reports/:id", Permission: "reports.view", Handler: d.ReportHandler.Get, Summary: "Get report", Tag: "reports"},
+		{Method: http.MethodPost, Path: "/reports", Permission: "reports.manage", Handler: d.ReportHandler.Create, Summary: "Create report", Tag: "reports"},
+		{Method: http.MethodPut, Path: "/reports/:id", Permission: "reports.manage", Handler: d.ReportHandler.Update, Summary: "Update report", Tag: "reports"},
+		{Method: http.MethodPost, Path: "/reports/:id/submit", Permission: "reports.manage", Handler: d.ReportHandler.Submit, Summary: "Submit report", Tag: "reports"},
+		{Method: http.MethodPost, Path: "/reports/:id/approve", Permission: "reports.review", Handler: d.ReportHandler.Approve, Summary: "Approve report", Tag: "reports"},
+		{Method: http.MethodPost, Path: "/reports/:id/reject", Permission: "reports.review", Handler: d.ReportHandler.Reject, Summary: "Reject report", Tag: "reports"},
 
-	api.POST("/okrs/links", middleware.RequirePermission("okr.manage"), d.OKRHandler.AddLink)
-	api.DELETE("/okrs/links/:id", middleware.RequirePermission("okr.manage"), d.OKRHandler.RemoveLink)
+		{Method: http.MethodGet, Path: "/meetings", Permission: "meetings.view", Handler: d.MeetingHandler.List, Summary: "List meetings", Tag: "meetings"},
+		{Method: http.MethodPost, Path: "/meetings", Permission: "meetings.manage", Handler: d.MeetingHandler.Create, Summary: "Create meeting", Tag: "meetings"},
+		{Method: http.MethodGet, Path: "/meetings/:id", Permission: "meetings.view", Handler: d.MeetingHandler.Get, Summary: "Get meeting", Tag: "meetings"},
+		{Method: http.MethodPut, Path: "/meetings/:id", Permission: "meetings.manage", Handler: d.MeetingHandler.Update, Summary: "Update meeting", Tag: "meetings"},
+		{Method: http.MethodPost, Path: "/meetings/:id/actions", Permission: "meetings.manage", Handler: d.MeetingHandler.AddAction, Summary: "Add meeting action", Tag: "meetings"},
+		{Method: http.MethodPost, Path: "/meetings/actions/:actionId/assign", Permission: "meetings.manage", Handler: d.MeetingHandler.AssignAction, Summary: "Assign action", Tag: "meetings"},
+		{Method: http.MethodPost, Path: "/meetings/actions/:actionId/convert-task", Permission: "meetings.manage", Handler: d.MeetingHandler.ConvertActionToTask, Summary: "Convert action to task", Tag: "meetings"},
+		{Method: http.MethodPost, Path: "/meetings/:id/links", Permission: "meetings.manage", Handler: d.MeetingHandler.AddLink, Summary: "Link meeting", Tag: "meetings"},
 
-	api.GET("/okrs/metrics", middleware.RequirePermission("okr.view"), d.OKRHandler.Metrics)
+		{Method: http.MethodGet, Path: "/config", Handler: d.ConfigHandler.Get, Summary: "Client config and feature flags", Tag: "config"},
+	}
 
-	api.GET("/reports", middleware.RequirePermission("reports.view"), d.ReportHandler.List)
-	api.GET("/reports/export", middleware.RequirePermission("reports.view"), d.ReportHandler.Export)
-	api.GET("/reports/:id", middleware.RequirePermission("reports.view"), d.ReportHandler.Get)
-	api.POST("/reports", middleware.RequirePermission("reports.manage"), d.ReportHandler.Create)
-	api.PUT("/reports/:id", middleware.RequirePermission("reports.manage"), d.ReportHandler.Update)
-	api.POST("/reports/:id/submit", middleware.RequirePermission("reports.manage"), d.ReportHandler.Submit)
-	api.POST("/reports/:id/approve", middleware.RequirePermission("reports.review"), d.ReportHandler.Approve)
-	api.POST("/reports/:id/reject", middleware.RequirePermission("reports.review"), d.ReportHandler.Reject)
+	registerRoutes(api, specs)
 
-	api.GET("/meetings", middleware.RequirePermission("meetings.view"), d.MeetingHandler.List)
-	api.POST("/meetings", middleware.RequirePermission("meetings.manage"), d.MeetingHandler.Create)
-	api.GET("/meetings/:id", middleware.RequirePermission("meetings.view"), d.MeetingHandler.Get)
-	api.PUT("/meetings/:id", middleware.RequirePermission("meetings.manage"), d.MeetingHandler.Update)
-	api.POST("/meetings/:id/actions", middleware.RequirePermission("meetings.manage"), d.MeetingHandler.AddAction)
-	api.POST("/meetings/actions/:actionId/assign", middleware.RequirePermission("meetings.manage"), d.MeetingHandler.AssignAction)
-	api.POST("/meetings/actions/:actionId/convert-task", middleware.RequirePermission("meetings.manage"), d.MeetingHandler.ConvertActionToTask)
-	api.POST("/meetings/:id/links", middleware.RequirePermission("meetings.manage"), d.MeetingHandler.AddLink)
+	docs := r.Group(fmt.Sprintf("%s/docs", versionedBase))
+	docs.Use(middleware.Auth(d.JWTSecret), middleware.OrgContext())
+	docs.GET("/openapi.json", serveOpenAPI(versionedBase, specs))
+	docs.GET("/graphql.sdl", serveGraphQLSDL(specs))
 
 	return r
 }
