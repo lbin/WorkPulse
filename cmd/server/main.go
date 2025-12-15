@@ -26,6 +26,9 @@ func main() {
 	wiSvc := service.NewWorkItemService(wiRepo)
 	wiHandler := handler.NewWorkItemHandler(wiSvc)
 
+	projectSvc := service.NewProjectService()
+	projectHandler := handler.NewProjectHandler(projectSvc)
+
 	auditRepo := repo.NewAuditRepo(gdb)
 	reportRepo := repo.NewReportRepo(gdb)
 	reportSvc := service.NewReportService(reportRepo, auditRepo)
@@ -37,6 +40,7 @@ func main() {
 	r := router.New(router.Deps{
 		JWTSecret:       cfg.JWTSecret,
 		WorkItemHandler: wiHandler,
+		ProjectHandler:  projectHandler,
 		OKRHandler:      okrHandler,
 		ReportHandler:   reportHandler,
 	})
