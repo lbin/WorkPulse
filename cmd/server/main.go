@@ -26,9 +26,13 @@ func main() {
 	wiSvc := service.NewWorkItemService(wiRepo)
 	wiHandler := handler.NewWorkItemHandler(wiSvc)
 
+	okrSvc := service.NewOKRService()
+	okrHandler := handler.NewOKRHandler(okrSvc)
+
 	r := router.New(router.Deps{
 		JWTSecret:       cfg.JWTSecret,
 		WorkItemHandler: wiHandler,
+		OKRHandler:      okrHandler,
 	})
 
 	log.Printf("listening on %s", cfg.Addr)

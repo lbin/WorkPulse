@@ -76,7 +76,8 @@ CREATE TABLE IF NOT EXISTS okr_cycles (
   name        text NOT NULL,
   start_date  date NOT NULL,
   end_date    date NOT NULL,
-  status      text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','active','closed')),
+  status      text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','active','closed','archived')),
+  schema_version int NOT NULL DEFAULT 1,
   created_by  uuid NOT NULL REFERENCES users(id),
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now(),
@@ -86,17 +87,17 @@ CREATE TABLE IF NOT EXISTS okr_cycles (
 
 CREATE INDEX IF NOT EXISTS idx_cycle_org_team_time ON okr_cycles(org_id, team_id, start_date);
 
-CREATE TABLE IF NOT EXISTS objectives (
+CREATE TABLE IF NOT EXISTS okr_objectives (
   id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id               uuid NOT NULL REFERENCES orgs(id),
   cycle_id             uuid NOT NULL REFERENCES okr_cycles(id),
   team_id              uuid NULL REFERENCES teams(id),
   owner_user_id        uuid NOT NULL REFERENCES users(id),
-  parent_objective_id  uuid NULL REFERENCES objectives(id),
+  parent_objective_id  uuid NULL REFERENCES okr_objectives(id),
   title                text NOT NULL,
   description          text NULL,
   weight               numeric(6,3) NOT NULL DEFAULT 1.0,
-  status               text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','active','closed')),
+  status               text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','active','closed','archived')),
   tags                 jsonb NOT NULL DEFAULT '[]'::jsonb,
   schema_version       int NOT NULL DEFAULT 1,
   payload              jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -105,16 +106,16 @@ CREATE TABLE IF NOT EXISTS objectives (
   deleted_at           timestamptz NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_obj_cycle ON objectives(cycle_id);
-CREATE INDEX IF NOT EXISTS idx_obj_owner ON objectives(owner_user_id);
-CREATE INDEX IF NOT EXISTS idx_obj_team ON objectives(team_id);
-CREATE INDEX IF NOT EXISTS idx_obj_parent ON objectives(parent_objective_id);
-CREATE INDEX IF NOT EXISTS gin_obj_payload ON objectives USING gin (payload jsonb_path_ops);
+CREATE INDEX IF NOT EXISTS idx_obj_cycle ON okr_objectives(cycle_id);
+CREATE INDEX IF NOT EXISTS idx_obj_owner ON okr_objectives(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_obj_team ON okr_objectives(team_id);
+CREATE INDEX IF NOT EXISTS idx_obj_parent ON okr_objectives(parent_objective_id);
+CREATE INDEX IF NOT EXISTS gin_obj_payload ON okr_objectives USING gin (payload jsonb_path_ops);
 
-CREATE TABLE IF NOT EXISTS key_results (
+CREATE TABLE IF NOT EXISTS okr_key_results (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id        uuid NOT NULL REFERENCES orgs(id),
-  objective_id  uuid NOT NULL REFERENCES objectives(id),
+  objective_id  uuid NOT NULL REFERENCES okr_objectives(id),
   title         text NOT NULL,
   metric_type   text NOT NULL,
   target_value  numeric(18,6) NULL,
@@ -122,7 +123,7 @@ CREATE TABLE IF NOT EXISTS key_results (
   unit          text NULL,
   weight        numeric(6,3) NOT NULL DEFAULT 1.0,
   confidence    int NOT NULL DEFAULT 70,
-  status        text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','active','closed')),
+  status        text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','active','closed','archived')),
   schema_version int NOT NULL DEFAULT 1,
   metric_payload jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at    timestamptz NOT NULL DEFAULT now(),
@@ -130,8 +131,23 @@ CREATE TABLE IF NOT EXISTS key_results (
   deleted_at    timestamptz NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_kr_objective ON key_results(objective_id);
-CREATE INDEX IF NOT EXISTS gin_kr_metric_payload ON key_results USING gin (metric_payload jsonb_path_ops);
+CREATE INDEX IF NOT EXISTS idx_kr_objective ON okr_key_results(objective_id);
+CREATE INDEX IF NOT EXISTS gin_kr_metric_payload ON okr_key_results USING gin (metric_payload jsonb_path_ops);
+
+CREATE TABLE IF NOT EXISTS okr_links (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id        uuid NOT NULL REFERENCES orgs(id),
+  objective_id  uuid NULL REFERENCES okr_objectives(id),
+  key_result_id uuid NULL REFERENCES okr_key_results(id),
+  entity_type   text NOT NULL CHECK (entity_type IN ('report','project','meeting')),
+  entity_id     uuid NOT NULL,
+  relation      text NOT NULL DEFAULT 'related',
+  schema_version int NOT NULL DEFAULT 1,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  CHECK (objective_id IS NOT NULL OR key_result_id IS NOT NULL)
+);
+
+CREATE INDEX IF NOT EXISTS idx_okr_links ON okr_links(entity_type, entity_id);
 
 CREATE TABLE IF NOT EXISTS okr_alignments (
   id        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -185,8 +201,8 @@ CREATE TABLE IF NOT EXISTS work_item_okr_links (
   id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id              uuid NOT NULL REFERENCES orgs(id),
   work_item_id        uuid NOT NULL REFERENCES work_items(id) ON DELETE CASCADE,
-  objective_id        uuid NULL REFERENCES objectives(id),
-  key_result_id       uuid NULL REFERENCES key_results(id),
+  objective_id        uuid NULL REFERENCES okr_objectives(id),
+  key_result_id       uuid NULL REFERENCES okr_key_results(id),
   link_type           text NOT NULL CHECK (link_type IN ('planned','actual','both')),
   contribution_weight numeric(6,3) NOT NULL DEFAULT 1.0,
   evidence_required   boolean NOT NULL DEFAULT false,
