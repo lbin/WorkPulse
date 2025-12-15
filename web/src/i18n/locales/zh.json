@@ -17,7 +17,12 @@
     "required": "必填",
     "save": "保存",
     "saved": "已保存",
-    "not_set": "未设置"
+    "not_set": "未设置",
+    "unauthorizedTitle": "暂无权限",
+    "unauthorizedDesc": "您无权访问该页面。",
+    "backHome": "返回仪表盘",
+    "teamSwitch": "团队/组织单元",
+    "selectTeam": "选择团队"
   },
   "dashboard": {
     "title": "今日 / 工作项",
@@ -118,5 +123,8 @@
     "saveFailed": "操作失败",
     "reviewUpdated": "审核已更新",
     "draft": "草稿"
+  },
+  "projects": {
+    "noManagePermission": "关联需要项目编辑权限"
   }
 }

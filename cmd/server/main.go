@@ -6,6 +6,7 @@ import (
 	"workpulse/internal/config"
 	"workpulse/internal/db"
 	"workpulse/internal/handler"
+	"workpulse/internal/middleware"
 	"workpulse/internal/repo"
 	"workpulse/internal/router"
 	"workpulse/internal/service"
@@ -30,15 +31,20 @@ func main() {
 	projectHandler := handler.NewProjectHandler(projectSvc)
 
 	auditRepo := repo.NewAuditRepo(gdb)
+	rbacRepo := repo.NewRBACRepo(gdb)
 	reportRepo := repo.NewReportRepo(gdb)
 	reportSvc := service.NewReportService(reportRepo, auditRepo)
 	reportHandler := handler.NewReportHandler(reportSvc)
+	authSvc := service.NewAuthService(rbacRepo, auditRepo)
+	authHandler := handler.NewAuthHandler(authSvc)
 
 	okrSvc := service.NewOKRService()
 	okrHandler := handler.NewOKRHandler(okrSvc)
 
 	meetingSvc := service.NewMeetingService()
 	meetingHandler := handler.NewMeetingHandler(meetingSvc)
+
+	permMW := middleware.NewPermissionsLoader(authSvc)
 
 	r := router.New(router.Deps{
 		JWTSecret:       cfg.JWTSecret,
@@ -47,6 +53,8 @@ func main() {
 		OKRHandler:      okrHandler,
 		ReportHandler:   reportHandler,
 		MeetingHandler:  meetingHandler,
+		AuthHandler:     authHandler,
+		PermissionMW:    permMW,
 	})
 
 	log.Printf("listening on %s", cfg.Addr)
