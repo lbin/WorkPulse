@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS meetings (
   updated_at       timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE meetings
+  ADD COLUMN IF NOT EXISTS scheduled_at timestamptz NOT NULL DEFAULT now();
+
 CREATE INDEX IF NOT EXISTS idx_meetings_org_time ON meetings(org_id, scheduled_at DESC);
 CREATE INDEX IF NOT EXISTS idx_meetings_team ON meetings(team_id);
 
