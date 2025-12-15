@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS meeting_actions (
   owner_user_id uuid NULL REFERENCES users(id),
   due_date     date NULL,
   status       text NOT NULL DEFAULT 'todo' CHECK (status IN ('todo','doing','done','archived')),
-  related_task_id uuid NULL REFERENCES tasks(id),
+  related_task_id uuid NULL REFERENCES work_items(id),
   created_at   timestamptz NOT NULL DEFAULT now(),
   updated_at   timestamptz NOT NULL DEFAULT now()
 );

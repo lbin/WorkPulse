@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -35,8 +36,37 @@ func Run(db *gorm.DB, migrationsTable string) error {
 		return fmt.Errorf("init migrate instance: %w", err)
 	}
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("apply migrations: %w", err)
+	if err := m.Up(); err != nil {
+		var dirtyErr migrate.ErrDirty
+		isDirty := errors.As(err, &dirtyErr)
+
+		if !isDirty && err != migrate.ErrNoChange {
+			return fmt.Errorf("apply migrations: %w", err)
+		}
+
+		if isDirty {
+			version, dirty, verr := m.Version()
+			if verr != nil {
+				return fmt.Errorf("get dirty version: %w", verr)
+			}
+			if !dirty {
+				return fmt.Errorf("apply migrations: %w", err)
+			}
+
+			// Roll back the version marker to the last completed migration so we can retry cleanly.
+			target := int(version - 1)
+			if target < 0 {
+				target = 0
+			}
+
+			if ferr := m.Force(target); ferr != nil {
+				return fmt.Errorf("force dirty migration version %d: %w", version, ferr)
+			}
+
+			if rerr := m.Up(); rerr != nil && rerr != migrate.ErrNoChange {
+				return fmt.Errorf("retry migrations after forcing version %d: %w", target, rerr)
+			}
+		}
 	}
 	return nil
 }
