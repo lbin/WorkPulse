@@ -1,7 +1,5 @@
 {
-  "app": {
-    "name": "WorkPulse"
-  },
+  "app": {"name": "WorkPulse"},
   "nav": {
     "dashboard": "Today",
     "okr": "OKR",
@@ -15,7 +13,11 @@
     "chinese": "中文",
     "english": "English",
     "todo": "TODO",
-    "actions": "Actions"
+    "actions": "Actions",
+    "required": "Required",
+    "save": "Save",
+    "saved": "Saved",
+    "not_set": "Not set"
   },
   "dashboard": {
     "title": "Today / Work Items",
@@ -36,6 +38,38 @@
     "evidenceRequired": "Evidence Required",
     "selectKR": "Select a KR (from backend)",
     "selectObj": "Select an Objective (optional)"
+  },
+  "meetings": {
+    "title": "Meeting",
+    "list": "Meeting list",
+    "filters": "Filters",
+    "create": "New meeting",
+    "time": "Time",
+    "team": "Team",
+    "team_placeholder": "Filter by team id",
+    "status": "Status",
+    "agenda": "Agenda",
+    "notes": "Notes",
+    "notes_editor": "Notes & agenda",
+    "action_items": "Action items",
+    "action_title": "Action",
+    "action_placeholder": "What needs to be done?",
+    "owner": "Owner",
+    "owner_placeholder": "Owner user id",
+    "due": "Due date",
+    "add_action": "Add action",
+    "mark_done": "Mark done",
+    "reopen": "Reopen",
+    "convert_task": "Convert to task",
+    "converted": "Created linked task",
+    "links": "Links",
+    "target_type": "Target type",
+    "target_id": "Target id",
+    "relation": "Relation",
+    "add_link": "Add link",
+    "overview": "Meeting overview",
+    "notes_editor_title": "Notes editor",
+    "action_items_title": "Action items"
   },
   "reports": {
     "filters": "Filters",
