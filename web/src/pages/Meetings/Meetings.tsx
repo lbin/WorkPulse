@@ -4,15 +4,7 @@ import type { ColumnsType } from "antd/es/table";
 import { Link } from "react-router-dom";
 import dayjs, { Dayjs } from "dayjs";
 import { useTranslation } from "react-i18next";
-import { createMeeting, listMeetings } from "../../api/meetings";
-
-interface MeetingRow {
-  id: string;
-  title: string;
-  scheduled_at: string;
-  status: string;
-  team_id?: string;
-}
+import { createMeeting, listMeetings, type Meeting } from "../../api/meetings";
 
 export default function MeetingsPage() {
   const { t } = useTranslation();
@@ -22,7 +14,7 @@ export default function MeetingsPage() {
     return [start, end];
   });
   const [teamId, setTeamId] = useState<string | undefined>();
-  const [data, setData] = useState<MeetingRow[]>([]);
+  const [data, setData] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [form] = Form.useForm();
@@ -42,7 +34,7 @@ export default function MeetingsPage() {
       .finally(() => setLoading(false));
   }, [query]);
 
-  const columns: ColumnsType<MeetingRow> = [
+  const columns: ColumnsType<Meeting> = [
     {
       title: t("meetings.title"),
       dataIndex: "title",

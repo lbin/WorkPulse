@@ -36,3 +36,9 @@ This document captures day-2 guidance for keeping WorkPulse healthy. It pairs wi
 - **Choice:** OpenSearch/Elasticsearch for scale or lightweight Meilisearch for starter deployments.
 - **Sync strategy:** emit change events from GORM hooks or a queue processor to keep the search index consistent with PostgreSQL.
 - **Query surface:** expose a `/search` endpoint that fan-outs to the search backend while enforcing RBAC filters already present in middleware.
+
+## Environment reset (local/staging)
+- **Stop running processes:** halt `make run`/`npm run dev` and tear down any local containers to avoid open connections during cleanup.
+- **Drop + recreate the database:** with Postgres running locally, execute `psql -c "DROP DATABASE IF EXISTS workpulse;"` followed by `psql -c "CREATE DATABASE workpulse;"` (or your custom name). Re-run migrations with `make migrate` to repopulate schema and seed tables tracked in the migrations ledger.
+- **Purge local caches:** `go clean -cache -modcache` removes compiled artifacts and downloaded modules; `rm -rf web/node_modules && npm ci` resets the frontend dependency tree.
+- **Config reset:** delete or recreate `.env` (copy from `.env.example`) to clear credentials and feature flags. This ensures backend and frontend pick up a clean set of environment variables on the next start.
