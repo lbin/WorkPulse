@@ -10,6 +10,7 @@ type Deps struct {
 	JWTSecret       string
 	WorkItemHandler *handler.WorkItemHandler
 	OKRHandler      *handler.OKRHandler
+	ReportHandler   *handler.ReportHandler
 }
 
 func New(d Deps) *gin.Engine {
@@ -34,6 +35,15 @@ func New(d Deps) *gin.Engine {
 
 	api.POST("/okrs/links", d.OKRHandler.AddLink)
 	api.DELETE("/okrs/links/:id", d.OKRHandler.RemoveLink)
+
+	api.GET("/reports", d.ReportHandler.List)
+	api.GET("/reports/export", d.ReportHandler.Export)
+	api.GET("/reports/:id", d.ReportHandler.Get)
+	api.POST("/reports", d.ReportHandler.Create)
+	api.PUT("/reports/:id", d.ReportHandler.Update)
+	api.POST("/reports/:id/submit", d.ReportHandler.Submit)
+	api.POST("/reports/:id/approve", d.ReportHandler.Approve)
+	api.POST("/reports/:id/reject", d.ReportHandler.Reject)
 
 	return r
 }

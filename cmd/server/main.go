@@ -26,6 +26,11 @@ func main() {
 	wiSvc := service.NewWorkItemService(wiRepo)
 	wiHandler := handler.NewWorkItemHandler(wiSvc)
 
+	auditRepo := repo.NewAuditRepo(gdb)
+	reportRepo := repo.NewReportRepo(gdb)
+	reportSvc := service.NewReportService(reportRepo, auditRepo)
+	reportHandler := handler.NewReportHandler(reportSvc)
+
 	okrSvc := service.NewOKRService()
 	okrHandler := handler.NewOKRHandler(okrSvc)
 
@@ -33,6 +38,7 @@ func main() {
 		JWTSecret:       cfg.JWTSecret,
 		WorkItemHandler: wiHandler,
 		OKRHandler:      okrHandler,
+		ReportHandler:   reportHandler,
 	})
 
 	log.Printf("listening on %s", cfg.Addr)
