@@ -17,6 +17,23 @@ type okrStore struct {
 	links      map[uuid.UUID]*models.OKRLink
 }
 
+// OKRCoverage captures how many key results are linked to a specific entity type.
+type OKRCoverage struct {
+	EntityType       string  `json:"entity_type"`
+	Coverage         float64 `json:"coverage"`
+	LinkedKeyResults int     `json:"linked_key_results"`
+	TotalKeyResults  int     `json:"total_key_results"`
+	Deviation        float64 `json:"deviation"`
+}
+
+// OKRMetrics aggregates completion, deviation, and coverage insights.
+type OKRMetrics struct {
+	Completion         float64               `json:"completion"`
+	Deviation          float64               `json:"deviation"`
+	UnlinkedKeyResults []models.OKRKeyResult `json:"unlinked_key_results"`
+	Coverage           []OKRCoverage         `json:"coverage"`
+}
+
 // OKRService keeps a light-weight in-memory store so that the API can be exercised
 // without requiring a full persistence layer. The storage is keyed per-org.
 type OKRService struct {
@@ -212,4 +229,105 @@ func (s *OKRService) ListLinks(ctx context.Context, orgID uuid.UUID, entityType 
 		}
 	}
 	return res, nil
+}
+
+// ComputeMetrics aggregates completion, deviation and link coverage for the selected slice of OKRs.
+func (s *OKRService) ComputeMetrics(ctx context.Context, orgID uuid.UUID, cycleID, teamID, ownerID *uuid.UUID) (OKRMetrics, error) {
+	store := s.ensureStore(orgID)
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var filteredObjectives []*models.OKRObjective
+	for _, obj := range store.objectives {
+		if cycleID != nil && obj.CycleID != *cycleID {
+			continue
+		}
+		if teamID != nil && (obj.TeamID == nil || *obj.TeamID != *teamID) {
+			continue
+		}
+		if ownerID != nil && obj.OwnerUserID != *ownerID {
+			continue
+		}
+		filteredObjectives = append(filteredObjectives, obj)
+	}
+
+	objectiveLookup := make(map[uuid.UUID]struct{}, len(filteredObjectives))
+	for _, obj := range filteredObjectives {
+		objectiveLookup[obj.ID] = struct{}{}
+	}
+
+	var keyResults []*models.OKRKeyResult
+	for _, kr := range store.keyResults {
+		if _, ok := objectiveLookup[kr.ObjectiveID]; !ok {
+			continue
+		}
+		keyResults = append(keyResults, kr)
+	}
+
+	metrics := OKRMetrics{}
+	if len(keyResults) == 0 {
+		return metrics, nil
+	}
+
+	var totalProgress float64
+	var totalDeviation float64
+	linkedByType := make(map[string]map[uuid.UUID]struct{})
+	progressByKR := make(map[uuid.UUID]float64)
+
+	for _, kr := range keyResults {
+		progress := progressValue(kr)
+		progressByKR[kr.ID] = progress
+		totalProgress += progress
+		totalDeviation += (100 - progress)
+
+		var hasLink bool
+		for _, l := range store.links {
+			if l.KeyResultID != nil && *l.KeyResultID == kr.ID {
+				hasLink = true
+				if _, ok := linkedByType[l.EntityType]; !ok {
+					linkedByType[l.EntityType] = make(map[uuid.UUID]struct{})
+				}
+				linkedByType[l.EntityType][kr.ID] = struct{}{}
+			}
+		}
+		if !hasLink {
+			metrics.UnlinkedKeyResults = append(metrics.UnlinkedKeyResults, *kr)
+		}
+	}
+
+	metrics.Completion = totalProgress / float64(len(keyResults))
+	metrics.Deviation = totalDeviation / float64(len(keyResults))
+
+	for entityType, linked := range linkedByType {
+		linkedCount := len(linked)
+		coverage := (float64(linkedCount) / float64(len(keyResults))) * 100
+		var devSum float64
+		for krID := range linked {
+			devSum += (100 - progressByKR[krID])
+		}
+		deviation := 0.0
+		if linkedCount > 0 {
+			deviation = devSum / float64(linkedCount)
+		}
+		metrics.Coverage = append(metrics.Coverage, OKRCoverage{
+			EntityType:       entityType,
+			Coverage:         coverage,
+			LinkedKeyResults: linkedCount,
+			TotalKeyResults:  len(keyResults),
+			Deviation:        deviation,
+		})
+	}
+
+	return metrics, nil
+}
+
+func progressValue(kr *models.OKRKeyResult) float64 {
+	if kr.TargetValue == nil || *kr.TargetValue == 0 || kr.CurrentValue == nil {
+		return 0
+	}
+	progress := (*kr.CurrentValue / *kr.TargetValue) * 100
+	if progress > 100 {
+		return 100
+	}
+	return progress
 }

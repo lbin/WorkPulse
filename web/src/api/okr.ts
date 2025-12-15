@@ -31,6 +31,21 @@ export type OKRLink = {
   relation: string;
 };
 
+export type OKRCoverage = {
+  entity_type: string;
+  coverage: number;
+  linked_key_results: number;
+  total_key_results: number;
+  deviation: number;
+};
+
+export type OKRMetrics = {
+  completion: number;
+  deviation: number;
+  unlinked_key_results: OKRKeyResult[];
+  coverage: OKRCoverage[];
+};
+
 export type OKRFilter = {
   cycle_id?: string;
   team_id?: string;
@@ -53,4 +68,9 @@ export async function addLink(link: Omit<OKRLink, "id">) {
 
 export async function removeLink(id: string) {
   return api.delete(`/okrs/links/${id}`);
+}
+
+export async function fetchMetrics(filter: OKRFilter) {
+  const { data } = await api.get("/okrs/metrics", { params: filter });
+  return data.data as OKRMetrics;
 }

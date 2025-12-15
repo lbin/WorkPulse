@@ -290,6 +290,29 @@ func (h *OKRHandler) RemoveLink(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": "unlinked"})
 }
 
+func (h *OKRHandler) Metrics(c *gin.Context) {
+	orgID := uuid.MustParse(c.GetString("org_id"))
+	var cycleID, teamID, ownerID *uuid.UUID
+	if v := c.Query("cycle_id"); v != "" {
+		id := uuid.MustParse(v)
+		cycleID = &id
+	}
+	if v := c.Query("team_id"); v != "" {
+		id := uuid.MustParse(v)
+		teamID = &id
+	}
+	if v := c.Query("owner_user_id"); v != "" {
+		id := uuid.MustParse(v)
+		ownerID = &id
+	}
+	metrics, err := h.svc.ComputeMetrics(c.Request.Context(), orgID, cycleID, teamID, ownerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": metrics})
+}
+
 func defaultString(v, def string) string {
 	if v == "" {
 		return def
