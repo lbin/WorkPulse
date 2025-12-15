@@ -12,6 +12,7 @@ type Deps struct {
 	ProjectHandler  *handler.ProjectHandler
 	OKRHandler      *handler.OKRHandler
 	ReportHandler   *handler.ReportHandler
+	MeetingHandler  *handler.MeetingHandler
 }
 
 func New(d Deps) *gin.Engine {
@@ -61,6 +62,15 @@ func New(d Deps) *gin.Engine {
 	api.POST("/reports/:id/submit", d.ReportHandler.Submit)
 	api.POST("/reports/:id/approve", d.ReportHandler.Approve)
 	api.POST("/reports/:id/reject", d.ReportHandler.Reject)
+
+	api.GET("/meetings", d.MeetingHandler.List)
+	api.POST("/meetings", d.MeetingHandler.Create)
+	api.GET("/meetings/:id", d.MeetingHandler.Get)
+	api.PUT("/meetings/:id", d.MeetingHandler.Update)
+	api.POST("/meetings/:id/actions", d.MeetingHandler.AddAction)
+	api.POST("/meetings/actions/:actionId/assign", d.MeetingHandler.AssignAction)
+	api.POST("/meetings/actions/:actionId/convert-task", d.MeetingHandler.ConvertActionToTask)
+	api.POST("/meetings/:id/links", d.MeetingHandler.AddLink)
 
 	return r
 }

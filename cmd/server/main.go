@@ -37,12 +37,16 @@ func main() {
 	okrSvc := service.NewOKRService()
 	okrHandler := handler.NewOKRHandler(okrSvc)
 
+	meetingSvc := service.NewMeetingService()
+	meetingHandler := handler.NewMeetingHandler(meetingSvc)
+
 	r := router.New(router.Deps{
 		JWTSecret:       cfg.JWTSecret,
 		WorkItemHandler: wiHandler,
 		ProjectHandler:  projectHandler,
 		OKRHandler:      okrHandler,
 		ReportHandler:   reportHandler,
+		MeetingHandler:  meetingHandler,
 	})
 
 	log.Printf("listening on %s", cfg.Addr)
