@@ -231,6 +231,7 @@ func defaultPermissions() []string {
 		"reports.manage",
 		"reports.review",
 		"workitems.manage",
+		"teams.manage",
 		"analytics.view",
 	}
 }

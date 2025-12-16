@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { fetchCurrentUser, AuthContext as ServerAuth, OrgUnit } from "../api/auth";
+import { createTeam, fetchCurrentUser, AuthContext as ServerAuth, OrgUnit } from "../api/auth";
 import { Spin, message } from "antd";
 
 interface AuthState {
@@ -19,6 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<ServerAuth>();
   const [loading, setLoading] = useState(true);
   const [activeOrgUnit, setActiveOrgUnit] = useState<string | undefined>(() => localStorage.getItem("active_org_unit") || undefined);
+  const [autoTeamCreated, setAutoTeamCreated] = useState(false);
 
   const refresh = useCallback(async (orgUnitId?: string) => {
     setLoading(true);
@@ -50,6 +51,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    const shouldAutocreate =
+      !autoTeamCreated &&
+      !!profile?.user &&
+      (!profile.org_units || profile.org_units.length === 0);
+
+    if (!shouldAutocreate) return;
+
+    setAutoTeamCreated(true);
+    const fallbackName = `${profile.user.display_name || "My"} Team`;
+    createTeam(fallbackName)
+      .then(() => refresh())
+      .catch((err: any) => {
+        console.error(err);
+        message.error(err?.response?.data?.error || "Failed to create team automatically");
+      });
+  }, [autoTeamCreated, profile, refresh]);
 
   const setActive = useCallback(
     (id?: string) => {

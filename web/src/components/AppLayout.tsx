@@ -11,7 +11,11 @@ const { Text } = Typography;
 
 export default function AppLayout() {
   const loc = useLocation();
-  const key = loc.pathname.startsWith("/okr") ? "/okr" : loc.pathname;
+  const key = loc.pathname.startsWith("/okr")
+    ? "/okr"
+    : loc.pathname.startsWith("/teams")
+      ? "/teams"
+      : loc.pathname;
   const { t } = useTranslation();
   const { profile, setActiveOrgUnit, activeOrgUnit, hasPermission } = useAuth();
   const { isFeatureEnabled } = useConfig();
@@ -21,6 +25,7 @@ export default function AppLayout() {
     () =>
       [
         { key: "/dashboard", label: <Link to="/dashboard">{t("nav.dashboard")}</Link>, permission: "dashboard.view" },
+        { key: "/teams", label: <Link to="/teams">{t("nav.teams", { defaultValue: "Teams" })}</Link>, permission: "teams.manage" },
         { key: "/okr", label: <Link to="/okr">{t("nav.okr")}</Link>, permission: "okr.view" },
         { key: "/projects", label: <Link to="/projects">{t("nav.projects")}</Link>, permission: "projects.view" },
         { key: "/meetings", label: <Link to="/meetings">{t("nav.meetings")}</Link>, permission: "meetings.view" },
