@@ -16,7 +16,6 @@ const items = [
 export default function AppLayout() {
   const loc = useLocation();
   const key = loc.pathname.startsWith("/okr") ? "/okr" : loc.pathname;
-  const teamName = localStorage.getItem("activeTeamName") || "未选择团队";
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Sider width={220}>
@@ -24,9 +23,7 @@ export default function AppLayout() {
         <Menu theme="dark" mode="inline" selectedKeys={[key]} items={items} />
       </Sider>
       <Layout>
-        <Header style={{ background: "#fff" }}>
-          <div style={{ fontWeight: 500 }}>当前团队：{teamName}</div>
-        </Header>
+        <Header style={{ background: "#fff" }} />
         <Content style={{ padding: 16 }}>
           <Outlet />
         </Content>
