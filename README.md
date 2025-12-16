@@ -12,6 +12,8 @@ make migrate
 # or: go run ./cmd/migrate
 ```
 
+The app automatically reads environment variables from a local `.env` file (see `.env.example`). `DB_DSN` must be set; otherwise, the command will exit with a helpful error instead of hanging on a missing database connection.
+
 ### 2) Backend
 ```bash
 cp .env.example .env
