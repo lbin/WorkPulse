@@ -28,6 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_teams_parent ON teams(parent_team_id);
 CREATE TABLE IF NOT EXISTS users (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id       uuid NOT NULL REFERENCES orgs(id),
+  password_hash text NOT NULL,
   email        text NOT NULL,
   display_name text NOT NULL,
   avatar_url   text NULL,
