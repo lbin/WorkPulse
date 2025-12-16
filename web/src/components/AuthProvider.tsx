@@ -9,6 +9,8 @@ interface AuthState {
   refresh: (orgUnitId?: string) => Promise<void>;
   setActiveOrgUnit: (id?: string) => void;
   hasPermission: (perm: string) => boolean;
+  isAuthenticated: boolean;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -21,6 +23,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async (orgUnitId?: string) => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setProfile(undefined);
+        setLoading(false);
+        return;
+      }
       const ctx = await fetchCurrentUser(orgUnitId || activeOrgUnit || undefined);
       setProfile(ctx);
       if (ctx.active_org_unit) {
@@ -30,6 +38,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err: any) {
       console.error(err);
       message.error(err?.response?.data?.error || "Failed to load profile");
+      if (err?.response?.status === 401) {
+        localStorage.removeItem("token");
+        setProfile(undefined);
+      }
     } finally {
       setLoading(false);
     }
@@ -54,6 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const permissions = useMemo(() => new Set(profile?.permissions || []), [profile]);
 
+  const logout = useCallback(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("active_org_unit");
+    setProfile(undefined);
+    setActiveOrgUnit(undefined);
+  }, []);
+
   const value: AuthState = {
     profile,
     loading,
@@ -61,6 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refresh,
     setActiveOrgUnit: setActive,
     hasPermission: (perm: string) => permissions.has(perm),
+    isAuthenticated: !!profile,
+    logout,
   };
 
   if (loading && !profile) {

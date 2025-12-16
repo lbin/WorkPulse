@@ -134,5 +134,34 @@
   },
   "projects": {
     "noManagePermission": "关联需要项目编辑权限"
+  },
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "email": "邮箱",
+    "password": "密码",
+    "displayName": "显示名称",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "请输入密码",
+    "displayNamePlaceholder": "团队可见的昵称",
+    "emailInvalid": "请输入正确的邮箱",
+    "loginSuccess": "登录成功",
+    "registerSuccess": "注册成功",
+    "loginFailed": "认证失败",
+    "credentialHint": "首次登录请使用邮箱+密码注册或登录。",
+    "onboardingTitle": "创建或加入团队",
+    "onboardingBody": "登录后请选择创建新团队或输入团队ID加入已有团队。",
+    "createTeam": "创建团队",
+    "joinTeam": "加入团队",
+    "teamName": "团队名称",
+    "teamNamePlaceholder": "例如：平台组",
+    "parentTeamOptional": "上级团队（可选）",
+    "parentTeamPlaceholder": "如需嵌套请填写上级团队ID",
+    "teamId": "团队ID",
+    "teamIdPlaceholder": "输入团队ID加入",
+    "teamCreated": "团队已创建",
+    "teamJoined": "已加入团队",
+    "actionFailed": "操作失败",
+    "emailOrPasswordRequired": "邮箱与密码必填"
   }
 }
