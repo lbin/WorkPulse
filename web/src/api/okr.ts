@@ -31,6 +31,16 @@ export type OKRLink = {
   relation: string;
 };
 
+export type OKRCycle = {
+  id: string;
+  name: string;
+  type: string;
+  team_id?: string;
+  start_date?: string;
+  end_date?: string;
+  status: string;
+};
+
 export type OKRCoverage = {
   entity_type: string;
   coverage: number;
@@ -53,13 +63,62 @@ export type OKRFilter = {
   status?: string;
 };
 
+export async function listCycles() {
+  const { data } = await api.get("/okrs/cycles");
+  return data.data as OKRCycle[];
+}
+
+export async function createCycle(payload: {
+  name: string;
+  type?: string;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
+  team_id?: string;
+}) {
+  const { data } = await api.post("/okrs/cycles", payload);
+  return data.data as OKRCycle;
+}
+
+export async function updateCycle(id: string, payload: Partial<OKRCycle>) {
+  const { data } = await api.put(`/okrs/cycles/${id}`, payload);
+  return data.data as OKRCycle;
+}
+
 export async function listObjectives(filter: OKRFilter) {
   const { data } = await api.get("/okrs/objectives", { params: filter });
   return data.data as { objectives: OKRObjective[]; key_results: OKRKeyResult[] };
 }
 
+export async function createObjective(payload: {
+  cycle_id: string;
+  title: string;
+  description?: string;
+  status?: string;
+  team_id?: string;
+  owner_user_id?: string;
+  tags?: string[];
+}) {
+  const { data } = await api.post("/okrs/objectives", payload);
+  return data.data as OKRObjective;
+}
+
 export async function updateKRProgress(id: string, current: number, confidence: number) {
   return api.post(`/okrs/key-results/${id}/progress`, { current, confidence });
+}
+
+export async function createKeyResult(payload: {
+  objective_id: string;
+  title: string;
+  metric_type?: string;
+  target_value?: number;
+  unit?: string;
+  current_value?: number;
+  confidence?: number;
+  status?: string;
+}) {
+  const { data } = await api.post("/okrs/key-results", payload);
+  return data.data as OKRKeyResult;
 }
 
 export async function addLink(link: Omit<OKRLink, "id">) {
