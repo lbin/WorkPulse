@@ -76,6 +76,11 @@ func New(d Deps) *gin.Engine {
 		{Method: http.MethodGet, Path: "/tasks/:id/links", Permission: "projects.view", Handler: d.ProjectHandler.ListTaskLinks, Summary: "List task links", Tag: "projects"},
 		{Method: http.MethodGet, Path: "/projects/:id/okr-progress", Permission: "projects.view", Handler: d.ProjectHandler.OKRProgress, Summary: "Project OKR progress", Tag: "projects"},
 
+		{Method: http.MethodGet, Path: "/okrs/cycles", Permission: "okr.view", Handler: d.OKRHandler.ListCycles, Summary: "List cycles", Tag: "okr"},
+		{Method: http.MethodPost, Path: "/okrs/cycles", Permission: "okr.manage", Handler: d.OKRHandler.CreateCycle, Summary: "Create cycle", Tag: "okr"},
+		{Method: http.MethodPut, Path: "/okrs/cycles/:id", Permission: "okr.manage", Handler: d.OKRHandler.UpdateCycle, Summary: "Update cycle", Tag: "okr"},
+		{Method: http.MethodPost, Path: "/okrs/cycles/:id/archive", Permission: "okr.manage", Handler: d.OKRHandler.ArchiveCycle, Summary: "Archive cycle", Tag: "okr"},
+
 		{Method: http.MethodGet, Path: "/okrs/objectives", Permission: "okr.view", Handler: d.OKRHandler.ListObjectives, Summary: "List objectives", Tag: "okr"},
 		{Method: http.MethodPost, Path: "/okrs/objectives", Permission: "okr.manage", Handler: d.OKRHandler.CreateObjective, Summary: "Create objective", Tag: "okr"},
 		{Method: http.MethodPut, Path: "/okrs/objectives/:id", Permission: "okr.manage", Handler: d.OKRHandler.UpdateObjective, Summary: "Update objective", Tag: "okr"},

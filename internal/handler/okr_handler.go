@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -14,6 +15,24 @@ import (
 type OKRHandler struct{ svc *service.OKRService }
 
 func NewOKRHandler(svc *service.OKRService) *OKRHandler { return &OKRHandler{svc: svc} }
+
+type createCycleReq struct {
+	Name      string  `json:"name" binding:"required"`
+	Type      string  `json:"type"`
+	TeamID    *string `json:"team_id"`
+	StartDate *string `json:"start_date"`
+	EndDate   *string `json:"end_date"`
+	Status    string  `json:"status"`
+}
+
+type updateCycleReq struct {
+	Name      string  `json:"name"`
+	Type      string  `json:"type"`
+	TeamID    *string `json:"team_id"`
+	StartDate *string `json:"start_date"`
+	EndDate   *string `json:"end_date"`
+	Status    string  `json:"status"`
+}
 
 type createObjectiveReq struct {
 	CycleID     string   `json:"cycle_id" binding:"required"`
@@ -30,14 +49,19 @@ type updateObjectiveReq struct {
 	Description *string  `json:"description"`
 	Status      string   `json:"status"`
 	Tags        []string `json:"tags"`
+	TeamID      *string  `json:"team_id"`
+	OwnerUserID *string  `json:"owner_user_id"`
 }
 
 type createKRReq struct {
-	ObjectiveID string   `json:"objective_id" binding:"required"`
-	Title       string   `json:"title" binding:"required"`
-	MetricType  string   `json:"metric_type"`
-	TargetValue *float64 `json:"target_value"`
-	Unit        *string  `json:"unit"`
+	ObjectiveID  string   `json:"objective_id" binding:"required"`
+	Title        string   `json:"title" binding:"required"`
+	MetricType   string   `json:"metric_type"`
+	TargetValue  *float64 `json:"target_value"`
+	Unit         *string  `json:"unit"`
+	CurrentValue *float64 `json:"current_value"`
+	Confidence   *int     `json:"confidence"`
+	Status       string   `json:"status"`
 }
 
 type updateKRReq struct {
@@ -55,6 +79,104 @@ type linkReq struct {
 	EntityType  string  `json:"entity_type" binding:"required"`
 	EntityID    string  `json:"entity_id" binding:"required"`
 	Relation    string  `json:"relation"`
+}
+
+func (h *OKRHandler) ListCycles(c *gin.Context) {
+	orgID := uuid.MustParse(c.GetString("org_id"))
+	cycles, err := h.svc.ListCycles(c.Request.Context(), orgID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": cycles})
+}
+
+func (h *OKRHandler) CreateCycle(c *gin.Context) {
+	orgID := uuid.MustParse(c.GetString("org_id"))
+	var req createCycleReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	cycle := &models.OKRCycle{
+		ID:            uuid.New(),
+		OrgID:         orgID,
+		Name:          req.Name,
+		Type:          defaultString(req.Type, "quarter"),
+		Status:        defaultString(req.Status, "active"),
+		CreatedBy:     uuid.Nil,
+		SchemaVersion: 1,
+	}
+
+	if creator := c.GetString("user_id"); creator != "" {
+		cycle.CreatedBy = uuid.MustParse(creator)
+	}
+	if req.TeamID != nil && *req.TeamID != "" {
+		id := uuid.MustParse(*req.TeamID)
+		cycle.TeamID = &id
+	}
+	if req.StartDate != nil {
+		if parsed, err := parseDateOnly(*req.StartDate); err == nil {
+			cycle.StartDate = parsed
+		}
+	}
+	if req.EndDate != nil {
+		if parsed, err := parseDateOnly(*req.EndDate); err == nil {
+			cycle.EndDate = parsed
+		}
+	}
+
+	if err := h.svc.CreateCycle(c.Request.Context(), cycle); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": cycle})
+}
+
+func (h *OKRHandler) UpdateCycle(c *gin.Context) {
+	orgID := uuid.MustParse(c.GetString("org_id"))
+	id := uuid.MustParse(c.Param("id"))
+	var req updateCycleReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	cycle := &models.OKRCycle{ID: id, OrgID: orgID, SchemaVersion: 1}
+	cycle.Name = req.Name
+	cycle.Type = req.Type
+	cycle.Status = req.Status
+	if req.TeamID != nil && *req.TeamID != "" {
+		teamID := uuid.MustParse(*req.TeamID)
+		cycle.TeamID = &teamID
+	}
+	if req.StartDate != nil {
+		if parsed, err := parseDateOnly(*req.StartDate); err == nil {
+			cycle.StartDate = parsed
+		}
+	}
+	if req.EndDate != nil {
+		if parsed, err := parseDateOnly(*req.EndDate); err == nil {
+			cycle.EndDate = parsed
+		}
+	}
+
+	if err := h.svc.UpdateCycle(c.Request.Context(), cycle); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": cycle})
+}
+
+func (h *OKRHandler) ArchiveCycle(c *gin.Context) {
+	orgID := uuid.MustParse(c.GetString("org_id"))
+	id := uuid.MustParse(c.Param("id"))
+	if err := h.svc.ArchiveCycle(c.Request.Context(), orgID, id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": "archived"})
 }
 
 func (h *OKRHandler) ListObjectives(c *gin.Context) {
@@ -99,6 +221,7 @@ func (h *OKRHandler) CreateObjective(c *gin.Context) {
 		Title:         req.Title,
 		Description:   req.Description,
 		Status:        defaultString(req.Status, "active"),
+		Weight:        1,
 		SchemaVersion: 1,
 		Tags:          datatypes.JSON([]byte("[]")),
 		Payload:       datatypes.JSON([]byte("{}")),
@@ -142,6 +265,13 @@ func (h *OKRHandler) UpdateObjective(c *gin.Context) {
 	if len(req.Tags) > 0 {
 		obj.Tags = datatypes.JSON([]byte(toJSONList(req.Tags)))
 	}
+	if req.TeamID != nil && *req.TeamID != "" {
+		id := uuid.MustParse(*req.TeamID)
+		obj.TeamID = &id
+	}
+	if req.OwnerUserID != nil && *req.OwnerUserID != "" {
+		obj.OwnerUserID = uuid.MustParse(*req.OwnerUserID)
+	}
 	if err := h.svc.UpdateObjective(c.Request.Context(), obj); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -174,6 +304,10 @@ func (h *OKRHandler) CreateKeyResult(c *gin.Context) {
 		MetricType:    defaultString(req.MetricType, "number"),
 		TargetValue:   req.TargetValue,
 		Unit:          req.Unit,
+		CurrentValue:  req.CurrentValue,
+		Confidence:    defaultInt(req.Confidence, 0),
+		Weight:        1,
+		Status:        defaultString(req.Status, "active"),
 		SchemaVersion: 1,
 		MetricPayload: datatypes.JSON([]byte("{}")),
 	}
@@ -192,7 +326,7 @@ func (h *OKRHandler) UpdateKeyResult(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	kr := &models.OKRKeyResult{ID: id, OrgID: orgID, SchemaVersion: 1}
+	kr := &models.OKRKeyResult{ID: id, OrgID: orgID, SchemaVersion: 1, Confidence: -1}
 	if req.Title != "" {
 		kr.Title = req.Title
 	}
@@ -320,6 +454,13 @@ func defaultString(v, def string) string {
 	return v
 }
 
+func defaultInt(v *int, def int) int {
+	if v == nil {
+		return def
+	}
+	return *v
+}
+
 func toJSONList(values []string) string {
 	if len(values) == 0 {
 		return "[]"
@@ -333,4 +474,8 @@ func toJSONList(values []string) string {
 	}
 	encoded += "]"
 	return encoded
+}
+
+func parseDateOnly(value string) (time.Time, error) {
+	return time.Parse("2006-01-02", value)
 }

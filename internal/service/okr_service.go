@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
@@ -65,6 +66,8 @@ func (s *OKRService) ensureStore(orgID uuid.UUID) *okrStore {
 		OrgID:         orgID,
 		Type:          "quarter",
 		Name:          "Q1 Preview",
+		StartDate:     time.Now().AddDate(0, -1, 0),
+		EndDate:       time.Now().AddDate(0, 2, 0),
 		Status:        "active",
 		SchemaVersion: 1,
 	}
@@ -101,15 +104,63 @@ func (s *OKRService) ensureStore(orgID uuid.UUID) *okrStore {
 
 func floatPointer(v float64) *float64 { return &v }
 
-func (s *OKRService) ListCycles(ctx context.Context, orgID uuid.UUID) ([]*models.OKRCycle, error) {
+func (s *OKRService) ListCycles(ctx context.Context, orgID uuid.UUID) ([]models.OKRCycle, error) {
 	store := s.ensureStore(orgID)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	res := make([]*models.OKRCycle, 0, len(store.cycles))
+	res := make([]models.OKRCycle, 0, len(store.cycles))
 	for _, c := range store.cycles {
-		res = append(res, c)
+		res = append(res, *c)
 	}
 	return res, nil
+}
+
+func (s *OKRService) CreateCycle(ctx context.Context, cycle *models.OKRCycle) error {
+	store := s.ensureStore(cycle.OrgID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	store.cycles[cycle.ID] = cycle
+	return nil
+}
+
+func (s *OKRService) UpdateCycle(ctx context.Context, cycle *models.OKRCycle) error {
+	store := s.ensureStore(cycle.OrgID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	existing, ok := store.cycles[cycle.ID]
+	if !ok {
+		store.cycles[cycle.ID] = cycle
+		return nil
+	}
+	if cycle.Name != "" {
+		existing.Name = cycle.Name
+	}
+	if cycle.Type != "" {
+		existing.Type = cycle.Type
+	}
+	if !cycle.StartDate.IsZero() {
+		existing.StartDate = cycle.StartDate
+	}
+	if !cycle.EndDate.IsZero() {
+		existing.EndDate = cycle.EndDate
+	}
+	if cycle.Status != "" {
+		existing.Status = cycle.Status
+	}
+	if cycle.TeamID != nil {
+		existing.TeamID = cycle.TeamID
+	}
+	return nil
+}
+
+func (s *OKRService) ArchiveCycle(ctx context.Context, orgID, id uuid.UUID) error {
+	store := s.ensureStore(orgID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if existing, ok := store.cycles[id]; ok {
+		existing.Status = "archived"
+	}
+	return nil
 }
 
 func (s *OKRService) ListObjectives(ctx context.Context, orgID uuid.UUID, cycleID, teamID, ownerID *uuid.UUID, status *string) ([]models.OKRObjective, []models.OKRKeyResult, error) {
@@ -118,6 +169,8 @@ func (s *OKRService) ListObjectives(ctx context.Context, orgID uuid.UUID, cycleI
 	defer s.mu.RUnlock()
 	var objectives []models.OKRObjective
 	var keyResults []models.OKRKeyResult
+
+	objectiveLookup := make(map[uuid.UUID]struct{})
 	for _, obj := range store.objectives {
 		if cycleID != nil && obj.CycleID != *cycleID {
 			continue
@@ -132,9 +185,12 @@ func (s *OKRService) ListObjectives(ctx context.Context, orgID uuid.UUID, cycleI
 			continue
 		}
 		objectives = append(objectives, *obj)
+		objectiveLookup[obj.ID] = struct{}{}
 	}
 	for _, kr := range store.keyResults {
-		keyResults = append(keyResults, *kr)
+		if _, ok := objectiveLookup[kr.ObjectiveID]; ok {
+			keyResults = append(keyResults, *kr)
+		}
 	}
 	return objectives, keyResults, nil
 }
@@ -151,7 +207,30 @@ func (s *OKRService) UpdateObjective(ctx context.Context, obj *models.OKRObjecti
 	store := s.ensureStore(obj.OrgID)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	store.objectives[obj.ID] = obj
+	existing, ok := store.objectives[obj.ID]
+	if !ok {
+		store.objectives[obj.ID] = obj
+		return nil
+	}
+	if obj.Title != "" {
+		existing.Title = obj.Title
+	}
+	if obj.Description != nil {
+		existing.Description = obj.Description
+	}
+	if obj.Status != "" {
+		existing.Status = obj.Status
+	}
+	if len(obj.Tags) > 0 {
+		existing.Tags = obj.Tags
+	}
+	if obj.OwnerUserID != uuid.Nil {
+		existing.OwnerUserID = obj.OwnerUserID
+	}
+	if obj.TeamID != nil {
+		existing.TeamID = obj.TeamID
+	}
+	store.objectives[obj.ID] = existing
 	return nil
 }
 
@@ -177,7 +256,33 @@ func (s *OKRService) UpdateKeyResult(ctx context.Context, kr *models.OKRKeyResul
 	store := s.ensureStore(kr.OrgID)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	store.keyResults[kr.ID] = kr
+	existing, ok := store.keyResults[kr.ID]
+	if !ok {
+		store.keyResults[kr.ID] = kr
+		return nil
+	}
+	if kr.Title != "" {
+		existing.Title = kr.Title
+	}
+	if kr.MetricType != "" {
+		existing.MetricType = kr.MetricType
+	}
+	if kr.TargetValue != nil {
+		existing.TargetValue = kr.TargetValue
+	}
+	if kr.CurrentValue != nil {
+		existing.CurrentValue = kr.CurrentValue
+	}
+	if kr.Unit != nil {
+		existing.Unit = kr.Unit
+	}
+	if kr.Status != "" {
+		existing.Status = kr.Status
+	}
+	if kr.Confidence >= 0 {
+		existing.Confidence = kr.Confidence
+	}
+	store.keyResults[kr.ID] = existing
 	return nil
 }
 
@@ -214,7 +319,15 @@ func (s *OKRService) RemoveLink(ctx context.Context, orgID, id uuid.UUID) error 
 	store := s.ensureStore(orgID)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	delete(store.links, id)
+	if _, ok := store.links[id]; ok {
+		delete(store.links, id)
+		return nil
+	}
+	for linkID, l := range store.links {
+		if l.KeyResultID != nil && *l.KeyResultID == id {
+			delete(store.links, linkID)
+		}
+	}
 	return nil
 }
 
