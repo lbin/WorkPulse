@@ -44,11 +44,18 @@ func New(d Deps) *gin.Engine {
 
 	versionedBase := fmt.Sprintf("/api/%s", d.APIVersion)
 
+	public := r.Group(versionedBase)
+	public.POST("/auth/login", d.AuthHandler.Login)
+	public.POST("/auth/register", d.AuthHandler.Register)
+
 	api := r.Group(versionedBase)
 	api.Use(middleware.Auth(d.JWTSecret), middleware.OrgContext(), d.PermissionMW.Handler())
 
 	specs := []RouteSpec{
 		{Method: http.MethodGet, Path: "/auth/me", Handler: d.AuthHandler.Me, Summary: "Current authenticated user", Tag: "auth"},
+		{Method: http.MethodGet, Path: "/auth/teams", Handler: d.AuthHandler.ListTeams, Summary: "List my teams", Tag: "auth"},
+		{Method: http.MethodPost, Path: "/auth/teams", Handler: d.AuthHandler.CreateTeam, Summary: "Create team", Tag: "auth"},
+		{Method: http.MethodPost, Path: "/auth/teams/join", Handler: d.AuthHandler.JoinTeam, Summary: "Join team", Tag: "auth"},
 
 		{Method: http.MethodPost, Path: "/work-items", Permission: "workitems.manage", Handler: d.WorkItemHandler.Create, Summary: "Create work item", Tag: "work_items"},
 		{Method: http.MethodPost, Path: "/work-items/:id/okr-links", Permission: "workitems.manage", Handler: d.WorkItemHandler.AddOKRLink, Summary: "Link work item to OKR", Tag: "work_items"},

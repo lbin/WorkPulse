@@ -60,10 +60,11 @@ func main() {
 
 	auditRepo := repo.NewAuditRepo(gdb)
 	rbacRepo := repo.NewRBACRepo(gdb)
+	authRepo := repo.NewAuthRepo(gdb)
 	reportRepo := repo.NewReportRepo(gdb)
 	reportSvc := service.NewReportService(reportRepo, auditRepo)
 	reportHandler := handler.NewReportHandler(reportSvc)
-	authSvc := service.NewAuthService(rbacRepo, auditRepo)
+	authSvc := service.NewAuthService(rbacRepo, auditRepo, authRepo, cfg.JWTSecret)
 	authHandler := handler.NewAuthHandler(authSvc)
 
 	configSvc := service.NewConfigService(cfg)

@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import AppLayout from "./components/AppLayout";
+import { RequireAuth } from "./components/RequireAuth";
 
 import Dashboard from "./pages/Dashboard";
 import OKRCycles from "./pages/OKR/OKRCycles";
@@ -17,12 +18,20 @@ import RequirePermission from "./components/RequirePermission";
 import Unauthorized from "./pages/Unauthorized";
 import Docs from "./pages/Docs/Docs";
 import { FeatureFlagGate } from "./components/FeatureFlagGate";
+import Login from "./pages/Login";
+import Onboarding from "./pages/Onboarding";
 
 export const routes = [
+  { path: "/login", element: <Login /> },
+  { path: "/onboarding", element: <RequireAuth allowWithoutTeam><Onboarding /></RequireAuth> },
   { path: "/", element: <Navigate to="/dashboard" replace /> },
   {
     path: "/",
-    element: <AppLayout />,
+    element: (
+      <RequireAuth>
+        <AppLayout />
+      </RequireAuth>
+    ),
     children: [
       { path: "dashboard", element: <RequirePermission permission="dashboard.view"><Dashboard /></RequirePermission> },
 

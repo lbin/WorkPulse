@@ -2,8 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
+	"strings"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
 	"workpulse/internal/models"
 	"workpulse/internal/repo"
@@ -12,6 +18,8 @@ import (
 type AuthService struct {
 	repo      *repo.RBACRepo
 	auditRepo *repo.AuditRepo
+	authRepo  *repo.AuthRepo
+	jwtSecret string
 }
 
 type UserView struct {
@@ -47,8 +55,9 @@ type AuthContext struct {
 	ActiveOrgUnit *uuid.UUID    `json:"active_org_unit"`
 }
 
-func NewAuthService(repo *repo.RBACRepo, auditRepo *repo.AuditRepo) *AuthService {
-	return &AuthService{repo: repo, auditRepo: auditRepo}
+// NewAuthService wires up the auth service with its dependencies.
+func NewAuthService(repo *repo.RBACRepo, auditRepo *repo.AuditRepo, authRepo *repo.AuthRepo, jwtSecret string) *AuthService {
+	return &AuthService{repo: repo, auditRepo: auditRepo, authRepo: authRepo, jwtSecret: jwtSecret}
 }
 
 func (s *AuthService) GetContext(ctx context.Context, orgID, userID uuid.UUID, orgUnitID *uuid.UUID) (*AuthContext, error) {
@@ -65,6 +74,119 @@ func (s *AuthService) GetContext(ctx context.Context, orgID, userID uuid.UUID, o
 		Permissions:   perms,
 		ActiveOrgUnit: active,
 	}, nil
+}
+
+// Login registers a session token for an existing user based on credentials.
+func (s *AuthService) Login(ctx context.Context, email, password string) (*LoginResult, error) {
+	user, err := s.authRepo.FindUserByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("invalid email or password")
+		}
+		return nil, err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		return nil, errors.New("invalid email or password")
+	}
+
+	token, err := s.issueToken(user.ID, user.OrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	ctxView, err := s.GetContext(ctx, user.OrgID, user.ID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LoginResult{Token: token, Context: ctxView}, nil
+}
+
+// Register creates a brand-new org and user using email/password credentials.
+func (s *AuthService) Register(ctx context.Context, email, password, displayName string) (*LoginResult, error) {
+	if email == "" || password == "" {
+		return nil, errors.New("email and password are required")
+	}
+
+	if displayName == "" {
+		parts := strings.Split(email, "@")
+		if len(parts) > 0 {
+			displayName = parts[0]
+		}
+	}
+
+	if _, err := s.authRepo.FindUserByEmail(ctx, email); err == nil {
+		return nil, errors.New("account already exists")
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	user, _, err := s.authRepo.CreateUserWithOrg(ctx, email, displayName, string(hash))
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := s.authRepo.CreateTeamWithMembership(ctx, user.OrgID, user.ID, "Default Team", nil); err != nil {
+		return nil, err
+	}
+
+	token, err := s.issueToken(user.ID, user.OrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	ctxView, err := s.GetContext(ctx, user.OrgID, user.ID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LoginResult{Token: token, Context: ctxView}, nil
+}
+
+// CreateTeam provisions a new team/org unit and enrolls the requesting user.
+func (s *AuthService) CreateTeam(ctx context.Context, orgID, userID uuid.UUID, name string, parentTeamID *uuid.UUID) (*models.Team, error) {
+	if strings.TrimSpace(name) == "" {
+		return nil, errors.New("team name is required")
+	}
+	return s.authRepo.CreateTeamWithMembership(ctx, orgID, userID, name, parentTeamID)
+}
+
+// JoinTeam subscribes a user to an existing team in their org.
+func (s *AuthService) JoinTeam(ctx context.Context, orgID, userID, teamID uuid.UUID) error {
+	return s.authRepo.AddUserToTeam(ctx, orgID, userID, teamID)
+}
+
+// ListTeams shows a user's memberships inside an org.
+func (s *AuthService) ListTeams(ctx context.Context, orgID, userID uuid.UUID) ([]models.Team, error) {
+	return s.authRepo.ListTeamsForUser(ctx, orgID, userID)
+}
+
+// issueToken builds a signed JWT with org and user claims.
+func (s *AuthService) issueToken(userID, orgID uuid.UUID) (string, error) {
+	type authClaims struct {
+		UserID string `json:"user_id"`
+		OrgID  string `json:"org_id"`
+		jwt.RegisteredClaims
+	}
+	claims := authClaims{
+		UserID:           userID.String(),
+		OrgID:            orgID.String(),
+		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour))},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(s.jwtSecret))
+}
+
+// LoginResult returns the JWT token and hydrated context.
+type LoginResult struct {
+	Token   string       `json:"token"`
+	Context *AuthContext `json:"context"`
 }
 
 func mergePermissions(src []string, defaults []string) []string {

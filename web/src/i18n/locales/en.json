@@ -134,5 +134,34 @@
   },
   "projects": {
     "noManagePermission": "Linking requires project edit permission."
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "displayName": "Display name",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "Enter password",
+    "displayNamePlaceholder": "Shown to teammates",
+    "emailInvalid": "Please input a valid email",
+    "loginSuccess": "Logged in",
+    "registerSuccess": "Registered",
+    "loginFailed": "Authentication failed",
+    "credentialHint": "Use email + password to login or register your workspace.",
+    "onboardingTitle": "Set up your first team",
+    "onboardingBody": "Create a team for your organization or join an existing one to continue.",
+    "createTeam": "Create team",
+    "joinTeam": "Join team",
+    "teamName": "Team name",
+    "teamNamePlaceholder": "e.g. Core Platform",
+    "parentTeamOptional": "Parent team (optional)",
+    "parentTeamPlaceholder": "Parent team id if nesting",
+    "teamId": "Team ID",
+    "teamIdPlaceholder": "Paste a team ID to join",
+    "teamCreated": "Team created",
+    "teamJoined": "Joined team",
+    "actionFailed": "Action failed",
+    "emailOrPasswordRequired": "Email and password are required"
   }
 }
