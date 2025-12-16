@@ -20,6 +20,7 @@ import Docs from "./pages/Docs/Docs";
 import { FeatureFlagGate } from "./components/FeatureFlagGate";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
+import Teams from "./pages/Teams/Teams";
 
 export const routes = [
   { path: "/login", element: <Login /> },
@@ -34,6 +35,7 @@ export const routes = [
     ),
     children: [
       { path: "dashboard", element: <RequirePermission permission="dashboard.view"><Dashboard /></RequirePermission> },
+      { path: "teams", element: <RequirePermission permission="teams.manage"><Teams /></RequirePermission> },
 
       { path: "okr", element: <RequirePermission permission="okr.view"><OKRCycles /></RequirePermission> },
       { path: "okr/cycles/:id", element: <RequirePermission permission="okr.view"><OKRCycleDetail /></RequirePermission> },

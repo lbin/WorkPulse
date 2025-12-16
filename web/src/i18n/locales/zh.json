@@ -7,7 +7,8 @@
     "meetings": "会议",
     "reports": "报告",
     "analytics": "分析",
-    "docs": "API 文档"
+    "docs": "API 文档",
+    "teams": "团队"
   },
   "common": {
     "language": "语言",
@@ -18,12 +19,29 @@
     "required": "必填",
     "save": "保存",
     "saved": "已保存",
+    "reset": "重置",
     "not_set": "未设置",
     "unauthorizedTitle": "暂无权限",
     "unauthorizedDesc": "您无权访问该页面。",
     "backHome": "返回仪表盘",
     "teamSwitch": "团队/组织单元",
     "selectTeam": "选择团队"
+  },
+  "teams": {
+    "title": "团队管理",
+    "subtitle": "创建或加入组织中的团队",
+    "active": "当前",
+    "setActive": "设为当前团队",
+    "switched": "已切换团队",
+    "loadFailed": "加载团队失败",
+    "created": "团队已创建",
+    "joined": "已加入团队",
+    "actionFailed": "操作失败",
+    "empty": "暂无团队，请先创建",
+    "create": "创建团队",
+    "join": "加入团队",
+    "teamName": "团队名称",
+    "parentTeam": "上级团队（可选）"
   },
   "dashboard": {
     "title": "今日 / 工作项",
@@ -44,6 +62,27 @@
     "evidenceRequired": "需要佐证",
     "selectKR": "选择关键结果（来自后端）",
     "selectObj": "选择上级目标（可选）"
+  },
+  "okr": {
+    "filters": {
+      "title": "筛选",
+      "cycle": "周期",
+      "team": "团队",
+      "owner": "负责人",
+      "status": "状态"
+    },
+    "overview": "OKR 健康度",
+    "completion": "平均完成度",
+    "deviation": "平均偏差",
+    "progress": "整体进度",
+    "list": "目标列表",
+    "board": "看板",
+    "keyResults": "关键结果",
+    "metric": "指标",
+    "target": "目标值",
+    "current": "当前值",
+    "confidence": "信心度",
+    "keyResultsTitle": "关键结果"
   },
   "meetings": {
     "title": "会议",

@@ -7,7 +7,8 @@
     "meetings": "Meetings",
     "reports": "Reports",
     "analytics": "Analytics",
-    "docs": "API Docs"
+    "docs": "API Docs",
+    "teams": "Teams"
   },
   "common": {
     "language": "Language",
@@ -18,12 +19,29 @@
     "required": "Required",
     "save": "Save",
     "saved": "Saved",
+    "reset": "Reset",
     "not_set": "Not set",
     "unauthorizedTitle": "No access",
     "unauthorizedDesc": "You do not have permission to view this page.",
     "backHome": "Back to dashboard",
     "teamSwitch": "Team/Org unit",
     "selectTeam": "Select team"
+  },
+  "teams": {
+    "title": "Team management",
+    "subtitle": "Create or join teams for your org",
+    "active": "Active",
+    "setActive": "Set active",
+    "switched": "Switched team",
+    "loadFailed": "Failed to load teams",
+    "created": "Team created",
+    "joined": "Joined team",
+    "actionFailed": "Action failed",
+    "empty": "No teams yet. Create one below.",
+    "create": "Create team",
+    "join": "Join team",
+    "teamName": "Team name",
+    "parentTeam": "Parent team (optional)"
   },
   "dashboard": {
     "title": "Today / Work Items",
@@ -44,6 +62,27 @@
     "evidenceRequired": "Evidence Required",
     "selectKR": "Select a KR (from backend)",
     "selectObj": "Select an Objective (optional)"
+  },
+  "okr": {
+    "filters": {
+      "title": "Filters",
+      "cycle": "Cycle",
+      "team": "Team",
+      "owner": "Owner",
+      "status": "Status"
+    },
+    "overview": "OKR Health",
+    "completion": "Avg. completion",
+    "deviation": "Avg. deviation",
+    "progress": "Overall progress",
+    "list": "Objectives",
+    "board": "Kanban",
+    "keyResults": "Key Results",
+    "metric": "Metric",
+    "target": "Target",
+    "current": "Current",
+    "confidence": "Confidence",
+    "keyResultsTitle": "Key Results"
   },
   "meetings": {
     "title": "Meeting",
