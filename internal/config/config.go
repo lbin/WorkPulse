@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -22,6 +23,10 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
+	viper.SetConfigFile(".env")
+	viper.SetConfigType("env")
+	_ = viper.ReadInConfig()
+
 	viper.SetDefault("ENV", "dev")
 	viper.SetDefault("ADDR", ":8080")
 	viper.SetDefault("API_VERSION", "v1")
@@ -65,5 +70,10 @@ func Load() (*Config, error) {
 		OTLPEndpoint:    viper.GetString("OTEL_EXPORTER_OTLP_ENDPOINT"),
 		OTLPHeaders:     otlpHeaders,
 	}
+
+	if cfg.DBDSN == "" {
+		return nil, fmt.Errorf("DB_DSN is required (set it in .env or the environment)")
+	}
+
 	return cfg, nil
 }
